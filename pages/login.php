@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <title>Login - SbobinaX</title>
-    <link rel="stylesheet" href="/assets/dist/css/bootstrap.min.css?h=97380e22c8933e9aa79cbc2390b9f15a">
+    <link rel="stylesheet" href="../assets/dist/css/bootstrap.min.css?h=97380e22c8933e9aa79cbc2390b9f15a">
     <link rel="manifest" href="/manifest.json?h=af088d50ef94b82f510c17b292dfdc04" crossorigin="use-credentials">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i&amp;display=swap">
 </head>
@@ -23,7 +23,7 @@
                             <div class="col-lg-6">
                                 <div class="p-5">
                                     <div class="text-center">
-                                        <h3 class="text-dark mb-4" style="font-weight: bold;"><img src="/assets/dist/img/logo.png?h=028d08c66a107ea073d43d9a787966a7" style="width: 125PX;height: 125PX;">Welcome Back!</h3>
+                                        <h3 class="text-dark mb-4" style="font-weight: bold;"><img src="../assets/img/logo.png?h=028d08c66a107ea073d43d9a787966a7" style="width: 125PX;height: 125PX;">Welcome Back!</h3>
                                     </div>
                                     <form class="login"
                                           method="post"
@@ -33,13 +33,11 @@
                                                 <?php echo $_GET['error']; ?>
                                             </div>
                                         <?php } ?>
-                                        <div class="mb-3"><input class="form-control" type="number" name="uname" placeholder="Inserisci la Matricola" style="height: 53.1875px;padding: 16px;border-radius: 160px;"></div>
+                                        <div class="mb-3"><input class="form-control" name="uname" placeholder="Inserisci il nome utente" style="height: 53.1875px;padding: 16px;border-radius: 160px;"></div>
                                         <div class="mb-3"><input class="form-control form-control-user" type="password" id="exampleInputPassword" placeholder="Password" name="password"></div>
                                         <div class="mb-3">
                                             <div class="custom-control custom-checkbox small"></div>
                                         </div><button class="btn btn-primary d-block btn-user w-100" type="submit">Login</button>
-                                        <hr><a class="btn btn-primary d-block btn-google btn-user w-100 mb-2" role="button" data-bs-toggle="modal" data-bs-target="#myModal">Avanzate</a>
-                                        <a class="btn btn-primary d-block btn-facebook btn-user w-100" role="button" onclick="window.location.href='./Prenota_Esonero.php'">Prenota Esonero</a>
                                         <hr>
                                     </form>
                                     <div class="text-center"><a class="small" href="forgot-password.php">Forgot Password?</a></div>
@@ -52,7 +50,7 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/assets/js/script.min.js?h=bdf36300aae20ed8ebca7e88738d5267"></script>
+    <script src="../assets/js/script.min.js?h=bdf36300aae20ed8ebca7e88738d5267"></script>
 </body>
 
 </html>
