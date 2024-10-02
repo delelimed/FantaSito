@@ -39,7 +39,7 @@ if (isset($_POST['uname']) && isset($_POST['password'])) {
         }
 
         // Query utilizzando prepared statements per ottenere l'hash dell'utente dal database
-        $sql = "SELECT id, utente, nome, cognome, email, password, admin FROM fs_users WHERE utente=?";
+        $sql = "SELECT id, utente, nome, cognome, password, admin FROM fs_users WHERE utente=?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("s", $uname);
         $stmt->execute();
@@ -61,7 +61,6 @@ if (isset($_POST['uname']) && isset($_POST['password'])) {
                 $_SESSION['nome'] = $row['nome'];
                 $_SESSION['cognome'] = $row['cognome'];
                 $_SESSION['id'] = $row['id'];
-                $_SESSION['email'] = $row['email'];
                 $_SESSION['admin'] = $row['admin'];
                 $_SESSION['login_time'] = time();
                 $_SESSION['locked'] = $row['locked'];

@@ -577,19 +577,19 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                     <form id="formAggiungiGiocatore">
                                         <div class="mb-3">
                                             <label for="nome" class="form-label">Nome</label>
-                                            <input type="text" class="form-control" id="nome" required>
+                                            <input type="text" class="form-control" id="nomeadd" required>
                                         </div>
                                         <div class="mb-3">
                                             <label for="cognome" class="form-label">Cognome</label>
-                                            <input type="text" class="form-control" id="cognome" required>
+                                            <input type="text" class="form-control" id="cognomeadd" required>
                                         </div>
                                         <div class="mb-3">
                                             <label for="uname" class="form-label">Username</label>
-                                            <input type="text" class="form-control" id="uname" required>
+                                            <input type="text" class="form-control" id="unameadd" required>
                                         </div>
                                         <div class="form-group">
                                             <label for="interlega">Interlega</label>
-                                            <select class="form-control" id="interlega" name="interlega" required>
+                                            <select class="form-control" id="interlegaadd" name="interlegaadd" required>
                                                 <option value="">Seleziona Interlega</option>
                                                 <?php
                                                 // Query per recuperare le interleghe
@@ -608,7 +608,7 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                         </div>
                                         <div class="form-group">
                                             <label for="lega">Lega</label>
-                                            <select class="form-control" id="lega" name="lega" required>
+                                            <select class="form-control" id="legaadd" name="legaadd" required>
                                                 <option value="">Seleziona Lega</option>
                                                 <?php
                                                 // Query per recuperare le leghe
@@ -627,7 +627,7 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                         </div>
                                         <div class="mb-3">
                                             <label for="admin" class="form-label">Admin?</label>
-                                            <input type="checkbox" id="admin">
+                                            <input type="checkbox" id="adminadd">
                                         </div>
                                         <label>N.B.: la password corrisponde allo username.
                                         Al primo accesso, si raccomanda di IMPORRE un cambio password.</label>
@@ -689,6 +689,56 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
 
     <script>
         $(document).ready(function() {
+            $("#salvaGiocatore").click(function(event) {
+                event.preventDefault(); // Previeni il comportamento di default
+
+                var nome = $("#nomeadd").val();
+                var cognome = $("#cognomeadd").val();
+                var uname = $("#unameadd").val();
+                var interlega = $("#interlegaadd").val();
+                var lega = $("#legaadd").val();
+                var admin = $("#adminadd").is(':checked') ? 1 : 0;
+
+                // Controlla se i valori sono correttamente popolati nella console
+                console.log({
+                    nome: nome,
+                    cognome: cognome,
+                    uname: uname,
+                    interlega: interlega,
+                    lega: lega,
+                    admin: admin
+                });
+
+                // Effettua la richiesta AJAX
+                $.ajax({
+                    url: "../req/gestione_giocatori/addGiocatore.php",
+                    type: "POST",
+                    data: {
+                        nome: nome,
+                        cognome: cognome,
+                        uname: uname,
+                        interlega: interlega,
+                        lega: lega,
+                        admin: admin
+                    },
+                    success: function(response) {
+                        alert(response); // Mostra la risposta dal PHP
+                        $("#AggiungiGiocatore").modal('hide'); // Chiudi il modal dopo il successo
+
+                    },
+                    error: function(xhr, status, error) {
+                        alert("Errore durante l'aggiunta del giocatore.");
+                        console.log(error);
+                    }
+                });
+            });
+        });
+
+    </script>
+
+
+    <script>
+        $(document).ready(function() {
             // Evento per il pulsante di modifica
             $('.btn-primary[data-toggle="modal"]').on('click', function() {
                 var id = $(this).data('id');
@@ -725,51 +775,37 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
     </script>
 
     <script>
-        document.getElementById('salvaModifiche').addEventListener('click', function() {
-            // Ottieni i valori dei campi
-            const giocatoreId = document.getElementById('giocatoreId').value.trim();
-            const nome = document.getElementById('nome').value.trim();
-            const cognome = document.getElementById('cognome').value.trim();
-            const uname = document.getElementById('uname').value.trim(); // Aggiungi questo
+        $('#salvaModifiche').click(function () {
+            // Prepara i dati dal form
+            var data = {
+                giocatoreId: $('#giocatoreId').val(),
+                nome: $('#nome').val(),
+                cognome: $('#cognome').val(),
+                uname: $('#uname').val(),
+                interlega: $('#interlega').val(),
+                lega: $('#lega').val(),
+            };
 
-            // Log per il debug
-            console.log("ID Giocatore:", giocatoreId);
-            console.log("Nome:", nome);
-            console.log("Cognome:", cognome);
-            console.log("Username:", uname);
-
-            // Controllo dei campi vuoti
-            if (!giocatoreId || !nome || !cognome || !uname) { // Aggiungi uname alla verifica
-                alert('Errore: uno o più campi sono vuoti.');
-                return; // Non inviare la richiesta se ci sono campi vuoti
-            }
-
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', '../req/gestione_giocatori/updateGiocatore.php', true);
-            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    // Visualizza la risposta del server
-                    alert(xhr.responseText);
-                    $('#modificaGiocatoreModal').modal('hide');
-
-                    // Forza il reload della pagina
-                    location.reload();
-                } else {
-                    alert('Errore nella richiesta: ' + xhr.statusText);
+            // Invio AJAX
+            $.ajax({
+                url: '../req/gestione_giocatori/updateGiocatore.php', // Il percorso al file PHP
+                type: 'POST',
+                data: data,
+                success: function (response) {
+                    var res = JSON.parse(response);
+                    if (res.status == 'success') {
+                        alert(res.message);
+                        // Aggiorna la vista o chiudi il modal
+                        $('#modificaGiocatoreModal').modal('hide');
+                    } else {
+                        location.reload(); // Ricarica la pagina
+                        alert(res.message);
+                    }
+                },
+                error: function () {
+                    alert('Errore nella richiesta.');
                 }
-            };
-
-            xhr.onerror = function() {
-                alert('Errore di rete durante la richiesta.');
-            };
-
-            // Invia i dati al server
-            xhr.send('giocatoreId=' + encodeURIComponent(giocatoreId) +
-                '&nome=' + encodeURIComponent(nome) +
-                '&cognome=' + encodeURIComponent(cognome) +
-                '&uname=' + encodeURIComponent(uname)); // Includi uname nella richiesta
+            });
         });
     </script>
 
