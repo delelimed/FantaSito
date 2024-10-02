@@ -1,9 +1,92 @@
 <meta name="robots" content="noindex">
 <?php
 session_start();
+include '../db_connector.php';
 if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] == 0){
 
     ?>
+
+    <?php
+    // Assume che la sessione e la connessione al database ($conn) siano già avviate
+    $user_id = $_SESSION['id'];
+
+    // Query per ottenere i dati dell'utente (nome, cognome, password)
+    $query_nome_cognome = "SELECT nome, cognome, password, email FROM fs_users WHERE id = ?";
+    $stmt_nome_cognome = $conn->prepare($query_nome_cognome);
+    $stmt_nome_cognome->bind_param('i', $user_id);
+    $stmt_nome_cognome->execute();
+    $result_nome_cognome = $stmt_nome_cognome->get_result();
+
+    // Recupero i dati dell'utente
+    $row_nome_cognome = $result_nome_cognome->fetch_assoc();
+    $nome = $row_nome_cognome['nome'];
+    $cognome = $row_nome_cognome['cognome'];
+    $password = $row_nome_cognome['password'];
+
+    // Query per ottenere l'id_lega dall'utente
+    $query_lega = "SELECT id_lega FROM fs_appaia_user_lega WHERE id_user = ?";
+    $stmt_lega = $conn->prepare($query_lega);
+    $stmt_lega->bind_param('i', $user_id);
+    $stmt_lega->execute();
+    $result_lega = $stmt_lega->get_result();
+
+    // Controllo se c'è un risultato e recupero id_lega
+    if ($row_lega = $result_lega->fetch_assoc()) {
+        $id_lega = $row_lega['id_lega'];
+
+        // Query per confrontare id_lega con id nella tabella fs_leghe e ottenere il nome
+        $query_nome_lega = "SELECT nome_lega FROM fs_leghe WHERE id = ?";
+        $stmt_nome_lega = $conn->prepare($query_nome_lega);
+        $stmt_nome_lega->bind_param('i', $id_lega);
+        $stmt_nome_lega->execute();
+        $result_nome_lega = $stmt_nome_lega->get_result();
+
+        if ($row_nome_lega = $result_nome_lega->fetch_assoc()) {
+            $nome_lega = $row_nome_lega['nome_lega'];
+        } else {
+            echo "Nessuna lega trovata con questo ID.<br>";
+        }
+        $stmt_nome_lega->close();
+    } else {
+        echo "Nessuna lega associata a questo utente.<br>";
+    }
+
+    // Query per ottenere l'id_interlega dall'utente
+    $query_interlega = "SELECT id_interlega FROM fs_appaia_user_interlega WHERE id_user = ?";
+    $stmt_interlega = $conn->prepare($query_interlega);
+    $stmt_interlega->bind_param('i', $user_id);
+    $stmt_interlega->execute();
+    $result_interlega = $stmt_interlega->get_result();
+
+    // Controllo se c'è un risultato e recupero id_interlega
+    if ($row_interlega = $result_interlega->fetch_assoc()) {
+        $id_interlega = $row_interlega['id_interlega'];
+
+        // Query per confrontare id_interlega con id nella tabella fs_interleghe e ottenere il nome
+        $query_nome_interlega = "SELECT nome_interlega FROM fs_interleghe WHERE id = ?";
+        $stmt_nome_interlega = $conn->prepare($query_nome_interlega);
+        $stmt_nome_interlega->bind_param('i', $id_interlega);
+        $stmt_nome_interlega->execute();
+        $result_nome_interlega = $stmt_nome_interlega->get_result();
+
+        if ($row_nome_interlega = $result_nome_interlega->fetch_assoc()) {
+            $nome_interlega = $row_nome_interlega['nome_interlega'];
+        } else {
+            echo "Nessuna interlega trovata con questo ID.<br>";
+        }
+        $stmt_nome_interlega->close();
+    } else {
+        echo "Nessuna interlega associata a questo utente.<br>";
+    }
+
+    // Chiudi gli statement e la connessione
+    $stmt_nome_cognome->close();
+    $stmt_lega->close();
+    $stmt_interlega->close();
+    $conn->close();
+    ?>
+
+
 
 
     <!DOCTYPE html>
@@ -397,7 +480,54 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                         </div><!-- /.col -->
                     </div><!-- /.row -->
                     <!-- block content -->
-                    <!-- < ?php include '../req/home_fx.php'; ?> -->
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">LETTURA DATABASE: In caso di errori, prenditela con chi ha inserito i dati</h3>
+                        </div>
+                        <!-- /.card-header -->
+                        <!-- form start -->
+
+                        <form action="../req/update_password.php" method="post">
+                            <?php if (isset($_GET['status'])) { ?>
+                                <div class="alert alert-success" role="alert">
+                                    <?php echo $_GET['status']; ?>
+                                </div>
+                            <?php } ?>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label for="Nome">Nome</label>
+                                    <input type="text" class="form-control" id="Nome" name="Nome" value="<?php echo $nome ?>" disabled>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="Cognome">Cognome</label>
+                                    <input type="text" class="form-control" id="Cognome" name="Cognome" value="<?php echo $cognome ?>" disabled>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="Cognome">La Mia Lega</label>
+                                    <input type="text" class="form-control" id="lega" name="lega" value="<?php echo $nome_lega ?>" disabled>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="Cognome">La Mia Interlega</label>
+                                    <input type="text" class="form-control" id="interlega" name="interlega" value="<?php echo $nome_interlega ?>" disabled>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="Password">Password</label>
+                                    <input type="password" class="form-control" id="Password" name="Password" placeholder="Inserisci la nuova password">
+                                </div>
+
+
+                            </div>
+                            <!-- /.card-body -->
+
+                            <div class="card-footer">
+                                <button type="submit" class="btn btn-primary" >Aggiorna La Password</button>
+                            </div>
+                        </form>
+                    </div>
 
 
 

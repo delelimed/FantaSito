@@ -1,6 +1,8 @@
 <meta name="robots" content="noindex">
 <?php
 session_start();
+include '../db_connector.php';
+
 if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] == 0){
 
     ?>
@@ -397,11 +399,59 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                         </div><!-- /.col -->
                     </div><!-- /.row -->
                     <!-- block content -->
-                    <!-- < ?php include '../req/home_fx.php'; ?> -->
+                    <?php
+                    // Assume che la connessione al database ($conn) sia già avviata
 
+                    // Query per ottenere i dati dalla tabella fs_bonusmalus con il nome dell'educatore dalla tabella fs_educatori
+                    $query_bonusmalus = "
+        SELECT fs_bonusmalus.id_educatore, fs_bonusmalus.nome_bonus, fs_bonusmalus.punti, fs_educatori.educatore 
+        FROM fs_bonusmalus
+        JOIN fs_educatori ON fs_bonusmalus.id_educatore = fs_educatori.id
+    ";
+                    $result_bonusmalus = $conn->query($query_bonusmalus);
+                    ?>
 
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title">Lista dei bonus e dei malus</h3>
+                        </div> <!-- /.card-header -->
+                        <div class="card-body p-0">
+                            <table class="table table-striped">
+                                <thead>
+                                <tr>
+                                    <th style="width: 160px">Educatore</th>
+                                    <th>Descrizione</th>
+                                    <th style="width: 40px">Punti</th>
+                                    <th style="width: 40px">Occorrenze</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <?php
+                                // Verifica se ci sono risultati dalla query
+                                if ($result_bonusmalus->num_rows > 0) {
+                                    // Itera su ogni riga della tabella
+                                    while($row = $result_bonusmalus->fetch_assoc()) {
+                                        echo "<tr class='align-middle'>";
+                                        echo "<td>" . htmlspecialchars($row['educatore']) . "</td>"; // Nome dell'educatore
+                                        echo "<td>" . htmlspecialchars($row['nome_bonus']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($row['punti']) . "</td>";
+                                        echo "<td> </td>"; // Occorrenze ancora da definire
+                                        echo "</tr>";
+                                    }
+                                } else {
+                                    echo "<tr><td colspan='4'>Nessun dato trovato.</td></tr>";
+                                }
+                                ?>
+                                </tbody>
+                            </table>
+                        </div> <!-- /.card-body -->
+                    </div>
 
-                </div>
+                    <?php
+                    // Chiudi la connessione al database
+                    $conn->close();
+                    ?>
+
 
 
 

@@ -1,6 +1,7 @@
 <meta name="robots" content="noindex">
 <?php
 session_start();
+include '../db_connector.php';
 if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] == 0){
 
     ?>
@@ -397,8 +398,219 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                         </div><!-- /.col -->
                     </div><!-- /.row -->
                     <!-- block content -->
-                    <!-- < ?php include '../req/home_fx.php'; ?> -->
+                    <?php
+                    // Assume che la connessione al database ($conn) sia già avviata
 
+                    // Ottieni l'ID utente dalla sessione
+                    $user_id = $_SESSION['id'];
+
+                    // Query per ottenere tutti gli educatori dalla tabella fs_educatori
+                    $query_educatori = "SELECT id, educatore, prezzo FROM fs_educatori";
+                    $result_educatori = $conn->query($query_educatori);
+
+                    // Query per ottenere il valore dell'impostazione 'consenti_cambio'
+                    $query_impostazioni = "
+    SELECT valore 
+    FROM fs_impostazioni 
+    WHERE nome_impostazione = 'consenti_cambio'
+";
+                    $result_impostazioni = $conn->query($query_impostazioni);
+                    $row_impostazioni = $result_impostazioni->fetch_assoc();
+
+                    // Variabile per determinare se il pulsante deve essere attivo
+                    $consenti_cambio = ($row_impostazioni['valore'] == 1) ? true : false;
+
+                    // Query per ottenere il prezzo massimo
+                    $query_prezzo_massimo = "
+    SELECT valore 
+    FROM fs_impostazioni 
+    WHERE nome_impostazione = 'prezzo_massimo'
+";
+                    $result_prezzo_massimo = $conn->query($query_prezzo_massimo);
+                    $row_prezzo_massimo = $result_prezzo_massimo->fetch_assoc();
+                    $prezzo_massimo = $row_prezzo_massimo['valore'];
+
+                    // Query per ottenere il numero richiesto di educatori
+                    $query_numero_educatori = "
+    SELECT valore 
+    FROM fs_impostazioni 
+    WHERE nome_impostazione = 'numero_educatori'
+";
+                    $result_numero_educatori = $conn->query($query_numero_educatori);
+                    $row_numero_educatori = $result_numero_educatori->fetch_assoc();
+                    $numero_educatori_richiesto = $row_numero_educatori['valore'];
+
+                    // Gestione della logica di salvataggio (se la richiesta è POST)
+                    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['seleziona_educatore'])) {
+                        // Ottieni gli educatori selezionati dalla richiesta POST
+                        $educatori_selezionati_post = $_POST['seleziona_educatore'];
+
+                        // Calcola la somma dei prezzi degli educatori selezionati
+                        $somma_prezzi = 0;
+                        foreach ($educatori_selezionati_post as $educatore_id) {
+                            $query_prezzo = "SELECT prezzo FROM fs_educatori WHERE id = ?";
+                            $stmt_prezzo = $conn->prepare($query_prezzo);
+                            $stmt_prezzo->bind_param('i', $educatore_id);
+                            $stmt_prezzo->execute();
+                            $result_prezzo = $stmt_prezzo->get_result();
+                            if ($row_prezzo = $result_prezzo->fetch_assoc()) {
+                                $somma_prezzi += $row_prezzo['prezzo'];
+                            }
+                            $stmt_prezzo->close();
+                        }
+
+                        // Controlla se la somma supera il prezzo massimo
+                        if ($somma_prezzi > $prezzo_massimo) {
+                            echo "<script>alert('La somma dei prezzi selezionati supera il prezzo massimo di " . htmlspecialchars($prezzo_massimo) . "€.');</script>";
+                        } elseif ($numero_educatori_richiesto != 0 && count($educatori_selezionati_post) != $numero_educatori_richiesto) {
+                            // Controllo sul numero di educatori selezionati
+                            echo "<script>alert('Devi selezionare esattamente " . htmlspecialchars($numero_educatori_richiesto) . " educatori.');</script>";
+                        } else {
+                            // Cancellazione degli educatori esistenti nella squadra dell'utente
+                            $query_delete = "DELETE FROM fs_squadra WHERE id_user = ?";
+                            $stmt_delete = $conn->prepare($query_delete);
+                            $stmt_delete->bind_param('i', $user_id);
+                            $stmt_delete->execute();
+
+                            // Inserisci i nuovi educatori selezionati
+                            if (!empty($educatori_selezionati_post)) {
+                                $query_insert = "INSERT INTO fs_squadra (id_user, id_educatore) VALUES (?, ?)";
+                                $stmt_insert = $conn->prepare($query_insert);
+                                foreach ($educatori_selezionati_post as $educatore_id) {
+                                    $stmt_insert->bind_param('ii', $user_id, $educatore_id);
+                                    $stmt_insert->execute();
+                                }
+                                $stmt_insert->close();
+                            }
+
+                            // Aggiungi un messaggio di successo qui, se lo desideri
+                            echo "<script>alert('Modifiche salvate con successo!');</script>";
+                        }
+                    }
+
+                    // Chiudi lo statement per la query della squadra se necessario
+                    // Non è più necessario in questo contesto perché lo statement viene chiuso dopo l'uso
+
+                    ?>
+
+                    <!-- Pulsante Modifica Squadra -->
+                    <button type="button" class="btn btn-info"
+                            data-toggle="modal"
+                            data-target="#modificaSquadraModal"
+                        <?php echo !$consenti_cambio ? 'disabled' : ''; ?>>
+                        Modifica Squadra
+                    </button>
+
+                    <!-- Modale Modifica Squadra -->
+                    <div class="modal fade" id="modificaSquadraModal" tabindex="-1" role="dialog" aria-labelledby="modificaSquadraLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modificaSquadraLabel">Modifica la tua Squadra</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <!-- Form per inviare la richiesta POST -->
+                                    <form method="POST" action="">
+                                        <!-- Tabella degli educatori -->
+                                        <table class="table table-striped">
+                                            <thead>
+                                            <tr>
+                                                <th>Educatore</th>
+                                                <th>Prezzo</th>
+                                                <th>Seleziona</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <?php
+                                            // Verifica se ci sono risultati dalla query
+                                            if ($result_educatori->num_rows > 0) {
+                                                // Itera su ogni educatore
+                                                while($row = $result_educatori->fetch_assoc()) {
+                                                    echo "<tr>";
+                                                    echo "<td>" . htmlspecialchars($row['educatore']) . "</td>";
+                                                    echo "<td>" . htmlspecialchars($row['prezzo']) . "</td>";
+                                                    // Controlla se l'id dell'educatore è nell'array degli educatori selezionati
+                                                    $checked = in_array($row['id'], (isset($educatori_selezionati_post) ? $educatori_selezionati_post : [])) ? 'checked' : '';
+                                                    echo "<td><input type='checkbox' name='seleziona_educatore[]' value='" . htmlspecialchars($row['id']) . "' $checked></td>";
+                                                    echo "</tr>";
+                                                }
+                                            } else {
+                                                echo "<tr><td colspan='3'>Nessun educatore trovato.</td></tr>";
+                                            }
+                                            ?>
+                                            </tbody>
+                                        </table>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Chiudi</button>
+                                            <button type="submit" class="btn btn-primary">Salva modifiche</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+
+
+                    <?php
+                    // Assume che la connessione al database ($conn) sia già avviata
+                    $user_id = $_SESSION['id']; // Recupero l'id dell'utente dalla sessione
+
+                    // Query per ottenere i dati della squadra associata all'utente e i nomi degli educatori
+                    $query_squadra = "
+        SELECT fs_squadra.id_educatore, fs_educatori.educatore
+        FROM fs_squadra
+        JOIN fs_educatori ON fs_squadra.id_educatore = fs_educatori.id
+        WHERE fs_squadra.id_user = ?
+    ";
+                    $stmt_squadra = $conn->prepare($query_squadra);
+                    $stmt_squadra->bind_param('i', $user_id);
+                    $stmt_squadra->execute();
+                    $result_squadra = $stmt_squadra->get_result();
+                    ?>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title">La mia squadra</h3>
+                        </div> <!-- /.card-header -->
+                        <div class="card-body p-0">
+                            <table class="table table-striped">
+                                <thead>
+                                <tr>
+                                    <th>Educatore</th>
+                                    <th style="width: 40px">Punti</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <?php
+                                // Verifica se ci sono risultati dalla query
+                                if ($result_squadra->num_rows > 0) {
+                                    // Itera su ogni riga della tabella
+                                    while($row = $result_squadra->fetch_assoc()) {
+                                        echo "<tr class='align-middle'>";
+                                        echo "<td>" . htmlspecialchars($row['educatore']) . "</td>"; // Nome dell'educatore
+                                        echo "<td> </td>"; // Punti ancora da definire
+                                        echo "</tr>";
+                                    }
+                                } else {
+                                    echo "<tr><td colspan='3'>Nessun dato trovato.</td></tr>";
+                                }
+                                ?>
+                                </tbody>
+                            </table>
+                        </div> <!-- /.card-body -->
+                    </div>
+
+                    <?php
+                    // Chiudi lo statement e la connessione al database
+                    $stmt_squadra->close();
+                    $conn->close();
+                    ?>
 
 
                 </div>
