@@ -401,64 +401,271 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                 <!-- < ?php include '../req/home_fx.php'; ?> -->
 
                 <div class="row">
+                    <?php
+                    include '../db_connector.php';
+                    $user_id = $_SESSION['id'];
+
+                    // Query per ottenere il punteggio totale dell'utente
+                    $query = "
+    SELECT COALESCE(SUM(re.punti), 0) AS punteggio
+    FROM fs_squadra AS sq
+    LEFT JOIN fs_registra_eventi AS re ON sq.id_educatore = re.id_educatore
+    WHERE sq.id_user = ?
+";
+
+                    $stmt = $conn->prepare($query);
+                    $stmt->bind_param('i', $user_id); // 'i' indica che l'input è un intero
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+
+                    if ($result && $row = $result->fetch_assoc()) {
+                        $num_sbobine_pronte = $row['punteggio'];
+                    } else {
+                        $num_sbobine_pronte = 0; // Se non ci sono eventi, punteggio sarà 0
+                    }
+
+                    // Chiudi lo statement
+                    $stmt->close();
+                    ?>
+
                     <div class="col-md-3">
                         <div class="small-box bg-success">
                             <div class="inner">
-                                <h3><?php echo $num_sbobine_pronte; ?></h3>
+                                <h3><?php echo htmlspecialchars($num_sbobine_pronte); ?></h3>
                                 <p>Punteggio</p>
                             </div>
                             <div class="icon">
                                 <i class="nav-icon fa fa-upload"></i>
                             </div>
                             <a href="#" class="small-box-footer">
-                                Punteggio Totale <i class=></i>
+                                Punteggio Totale <i class=""></i>
                             </a>
                         </div>
                     </div>
+
+                    <?php
+                    include '../db_connector.php';
+                    $user_id = $_SESSION['id'];
+
+                    // Query per ottenere l'ID della lega dell'utente
+                    $query_league = "
+    SELECT al.id_lega
+    FROM fs_appaia_user_lega AS al
+    WHERE al.id_user = ?
+";
+
+                    $stmt_league = $conn->prepare($query_league);
+                    $stmt_league->bind_param('i', $user_id);
+                    $stmt_league->execute();
+                    $result_league = $stmt_league->get_result();
+
+                    if ($result_league && $row_league = $result_league->fetch_assoc()) {
+                        $league_id = $row_league['id_lega'];
+
+                        // Query per ottenere il punteggio totale della lega
+                        $query = "
+        SELECT COALESCE(SUM(re.punti), 0) AS punteggio
+        FROM fs_squadra AS sq
+        LEFT JOIN fs_registra_eventi AS re ON sq.id_educatore = re.id_educatore
+        WHERE sq.id_user IN (
+            SELECT al.id_user
+            FROM fs_appaia_user_lega AS al
+            WHERE al.id_lega = ?
+        )
+    ";
+
+                        $stmt = $conn->prepare($query);
+                        $stmt->bind_param('i', $league_id); // 'i' indica che l'input è un intero
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+
+                        if ($result && $row = $result->fetch_assoc()) {
+                            $num_sbobine_da_revisionare = $row['punteggio'];
+                        } else {
+                            $num_sbobine_da_revisionare = 0; // Se non ci sono eventi, punteggio sarà 0
+                        }
+
+                        // Chiudi lo statement
+                        $stmt->close();
+                    } else {
+                        $num_sbobine_da_revisionare = 0; // Se non ci sono leghe, punteggio sarà 0
+                    }
+
+                    // Chiudi lo statement della lega
+                    $stmt_league->close();
+                    ?>
+
                     <div class="col-md-3">
                         <div class="small-box bg-warning">
                             <div class="inner">
-                                <h3><?php echo $num_sbobine_da_revisionare; ?></h3>
+                                <h3><?php echo htmlspecialchars($num_sbobine_da_revisionare); ?></h3>
                                 <p>Punteggio Lega</p>
                             </div>
                             <div class="icon">
-                                <i class="nav-icon fa fa fa-eye"></i>
+                                <i class="nav-icon fa fa-eye"></i>
                             </div>
                             <a href="#" class="small-box-footer">
-                                Punteggio Lega <i class=></i>
+                                Punteggio Lega <i class=""></i>
                             </a>
                         </div>
                     </div>
+
+                    <?php
+                    include '../db_connector.php';
+                    $user_id = $_SESSION['id'];
+
+                    // Query per ottenere il punteggio dell'utente
+                    $query_user_score = "
+    SELECT COALESCE(SUM(re.punti), 0) AS punteggio
+    FROM fs_squadra AS sq
+    LEFT JOIN fs_registra_eventi AS re ON sq.id_educatore = re.id_educatore
+    WHERE sq.id_user = ?
+";
+
+                    $stmt_user_score = $conn->prepare($query_user_score);
+                    $stmt_user_score->bind_param('i', $user_id);
+                    $stmt_user_score->execute();
+                    $result_user_score = $stmt_user_score->get_result();
+
+                    if ($result_user_score && $row_user_score = $result_user_score->fetch_assoc()) {
+                        $user_score = $row_user_score['punteggio'];
+                    } else {
+                        $user_score = 0; // Se non ci sono eventi, punteggio sarà 0
+                    }
+
+                    // Query per calcolare la posizione in classifica
+                    $query_position = "
+    SELECT COUNT(*) AS posizione
+    FROM (
+        SELECT u.id, COALESCE(SUM(re.punti), 0) AS punteggio
+        FROM fs_users AS u
+        LEFT JOIN fs_squadra AS sq ON u.id = sq.id_user
+        LEFT JOIN fs_registra_eventi AS re ON sq.id_educatore = re.id_educatore
+        GROUP BY u.id
+    ) AS classifica
+    WHERE punteggio > ?
+";
+
+                    $stmt_position = $conn->prepare($query_position);
+                    $stmt_position->bind_param('i', $user_score);
+                    $stmt_position->execute();
+                    $result_position = $stmt_position->get_result();
+
+                    if ($result_position && $row_position = $result_position->fetch_assoc()) {
+                        $num_sbobine_da_svolgere = $row_position['posizione'] + 1; // +1 per la posizione dell'utente
+                    } else {
+                        $num_sbobine_da_svolgere = 1; // Se non ci sono punteggi, l'utente è primo
+                    }
+
+                    // Chiudi gli statement
+                    $stmt_user_score->close();
+                    $stmt_position->close();
+                    ?>
+
                     <div class="col-md-3">
                         <div class="small-box bg-info">
                             <div class="inner">
-                                <h3><?php echo $num_sbobine_da_svolgere; ?></h3>
+                                <h3><?php echo htmlspecialchars($num_sbobine_da_svolgere); ?></h3>
                                 <p>Posizione</p>
                             </div>
                             <div class="icon">
                                 <i class="fas fa-edit"></i>
                             </div>
                             <a href="#" class="small-box-footer">
-                                Posizione Generale <i class=></i>
+                                Posizione Generale <i class=""></i>
                             </a>
                         </div>
                     </div>
+
+                    <?php
+                    include '../db_connector.php';
+                    $user_id = $_SESSION['id'];
+
+                    // Query per ottenere l'ID della lega dell'utente
+                    $query_league_id = "
+    SELECT al.id_lega
+    FROM fs_appaia_user_lega AS al
+    WHERE al.id_user = ?
+";
+
+                    $stmt_league_id = $conn->prepare($query_league_id);
+                    $stmt_league_id->bind_param('i', $user_id);
+                    $stmt_league_id->execute();
+                    $result_league_id = $stmt_league_id->get_result();
+
+                    if ($result_league_id && $row_league_id = $result_league_id->fetch_assoc()) {
+                        $league_id = $row_league_id['id_lega'];
+
+                        // Query per calcolare il punteggio totale della lega
+                        $query_league_score = "
+        SELECT COALESCE(SUM(re.punti), 0) AS punteggio
+        FROM fs_appaia_user_lega AS al
+        LEFT JOIN fs_squadra AS sq ON al.id_user = sq.id_user
+        LEFT JOIN fs_registra_eventi AS re ON sq.id_educatore = re.id_educatore
+        WHERE al.id_lega = ?
+    ";
+
+                        $stmt_league_score = $conn->prepare($query_league_score);
+                        $stmt_league_score->bind_param('i', $league_id);
+                        $stmt_league_score->execute();
+                        $result_league_score = $stmt_league_score->get_result();
+
+                        if ($result_league_score && $row_league_score = $result_league_score->fetch_assoc()) {
+                            $league_score = $row_league_score['punteggio'];
+                        } else {
+                            $league_score = 0; // Se non ci sono eventi, punteggio sarà 0
+                        }
+
+                        // Query per calcolare la posizione della lega
+                        $query_league_position = "
+        SELECT COUNT(*) AS posizione
+        FROM (
+            SELECT al.id_lega, COALESCE(SUM(re.punti), 0) AS punteggio
+            FROM fs_appaia_user_lega AS al
+            LEFT JOIN fs_squadra AS sq ON al.id_user = sq.id_user
+            LEFT JOIN fs_registra_eventi AS re ON sq.id_educatore = re.id_educatore
+            GROUP BY al.id_lega
+        ) AS classifica
+        WHERE punteggio > ?
+    ";
+
+                        $stmt_league_position = $conn->prepare($query_league_position);
+                        $stmt_league_position->bind_param('i', $league_score);
+                        $stmt_league_position->execute();
+                        $result_league_position = $stmt_league_position->get_result();
+
+                        if ($result_league_position && $row_league_position = $result_league_position->fetch_assoc()) {
+                            $num_sbobine_late = $row_league_position['posizione'] + 1; // +1 per la posizione della lega
+                        } else {
+                            $num_sbobine_late = 1; // Se non ci sono punteggi, la lega è prima
+                        }
+
+                        // Chiudi gli statement
+                        $stmt_league_score->close();
+                        $stmt_league_position->close();
+                    } else {
+                        $num_sbobine_late = 'N/A'; // Nessuna lega trovata
+                    }
+
+                    // Chiudi lo statement per l'ID della lega
+                    $stmt_league_id->close();
+                    ?>
+
                     <div class="col-md-3">
                         <div class="small-box bg-danger">
                             <div class="inner">
-                               <!-- <h3><?php echo $num_sbobine; ?></h3> -->
-                                <h3><?php echo $num_sbobine_late; ?></h3>
+                                <h3><?php echo htmlspecialchars($num_sbobine_late); ?></h3>
                                 <p>Posizione Lega</p>
                             </div>
                             <div class="icon">
                                 <i class="fas fa-radiation-alt"></i>
                             </div>
                             <a href="#" class="small-box-footer">
-                                Posizione Lega <i class=></i>
+                                Posizione Lega <i class=""></i>
                             </a>
                         </div>
-
                     </div>
+
 
                 </div>
 
@@ -467,7 +674,7 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Andamento Settimanale</h3>
+                            <h3 class="card-title">Dettaglio Eventi</h3>
 
                         </div>
                         <!-- /.card-header -->
@@ -475,16 +682,60 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                             <table class="table table-hover text-nowrap">
                                 <thead>
                                 <tr>
-                                    <th> </th>
-
-                                    <th> </th>
+                                    <th>Data</th>
+                                    <th>Evento</th>
+                                    <th>Punteggio</th>
+                                    <th>Azioni</th>
                                 </tr>
                                 </thead>
-                                <tbody>
                                 <tbody id="sbobine-body">
+                                <?php
+                                include '../db_connector.php'; // Assicurati che il percorso sia corretto
 
+                                $user_id = $_SESSION['id']; // ID dell'utente loggato
 
+                                // Query per ottenere i dati dagli eventi, ordinati dal più recente al più vecchio
+                                $query = "
+        SELECT e.id, e.data, e.tipo_evento,
+               COALESCE(SUM(re.punti), 0) AS punteggio
+        FROM fs_eventi AS e
+        LEFT JOIN fs_registra_eventi AS re ON e.id = re.evento
+        LEFT JOIN fs_squadra AS sq ON re.id_educatore = sq.id_educatore
+        LEFT JOIN fs_appaia_user_lega AS al ON sq.id_user = al.id_user
+        WHERE al.id_user = ?
+        GROUP BY e.id, e.data, e.tipo_evento
+        ORDER BY e.data DESC
+        ";
+
+                                $stmt = $conn->prepare($query);
+                                $stmt->bind_param('i', $user_id); // 'i' indica che l'input è un intero
+                                $stmt->execute();
+                                $result = $stmt->get_result();
+
+                                if ($result && mysqli_num_rows($result) > 0) {
+                                    while ($row = mysqli_fetch_assoc($result)) {
+                                        // Formattazione della data in dd/mm/yyyy
+                                        $formatted_date = date('d/m/Y', strtotime($row['data']));
+
+                                        echo '<tr>';
+                                        echo '<td>' . htmlspecialchars($formatted_date) . '</td>'; // Data dell'evento
+                                        echo '<td>' . htmlspecialchars($row['tipo_evento']) . '</td>'; // Tipo di evento
+                                        echo '<td>' . htmlspecialchars($row['punteggio']) . '</td>'; // Punteggio totale del giocatore per l'evento
+                                        echo '<td>'; // Azioni
+                                        echo '<button class="btn btn-primary btn-sm" onclick="viewEvent(' . htmlspecialchars($row['id']) . ', \'' . addslashes($formatted_date) . '\', \'' . addslashes($row['tipo_evento']) . '\', ' . htmlspecialchars($row['punteggio']) . ')">VISUALIZZA</button>';
+                                        echo '</td>'; // Fine Azioni
+                                        echo '</tr>';
+                                    }
+                                } else {
+                                    echo '<tr><td colspan="4">Nessun evento trovato.</td></tr>';
+                                }
+
+                                // Chiudi lo statement
+                                $stmt->close();
+                                ?>
                                 </tbody>
+                            </table>
+
                             </table>
                         </div>
                         <!-- /.card-body -->
@@ -505,6 +756,61 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
         <!-- /.content -->
     </div>
     <!-- /.content-wrapper -->
+<!-- Modale per visualizzare i dettagli -->
+<div class="modal fade" id="punteggioModal" tabindex="-1" role="dialog" aria-labelledby="punteggioModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="punteggioModalLabel">Dettagli Evento</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Data:</strong> <span id="event-date"></span></p>
+                <p><strong>Tipo Evento:</strong> <span id="event-type"></span></p>
+                <p><strong>Punteggio Totale:</strong> <span id="event-punteggio"></span></p>
+                <div id="educatori-container"></div> <!-- Contenitore per gli educatori e punteggi -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Chiudi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function viewEvent(id, date, type, punteggio) {
+        // Popola i dati nella modale
+        document.getElementById('event-date').textContent = date;
+        document.getElementById('event-type').textContent = type;
+        document.getElementById('event-punteggio').textContent = punteggio;
+
+        // Ottieni i punteggi per gli educatori associati a questo evento
+        fetchEducatoriPunti(id);
+
+        // Mostra la modale
+        $('#punteggioModal').modal('show');
+    }
+
+    function fetchEducatoriPunti(eventId) {
+        // Fai una richiesta AJAX per ottenere i punteggi degli educatori per questo evento
+        $.ajax({
+            url: '../req/home_fx/getEducatoriPunti.php', // Percorso al file PHP per ottenere i dati
+            method: 'POST',
+            data: { evento: eventId },
+            success: function(data) {
+                // Pulisci il contenitore degli educatori
+                $('#educatori-container').empty();
+
+                // Aggiungi i dati degli educatori alla modale
+                $('#educatori-container').html(data);
+            }
+        });
+    }
+</script>
+
+
 
     <!-- Control Sidebar -->
 
@@ -535,6 +841,10 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
 <script src="../assets/dist/js/adminlte.min.js"></script>
 <!-- Include jQuery library if not already included -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
             $('#avvisoModal').modal('show');
