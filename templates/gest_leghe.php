@@ -446,19 +446,23 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                 <tbody>
                                 <?php
                                 // Assicurati di avere una connessione al database già aperta
-                                $query = "SELECT 
-            l.id AS id_lega,
-            l.nome_lega,
-            GROUP_CONCAT(DISTINCT CONCAT(u.nome, ' ', u.cognome) SEPARATOR ', ') AS partecipanti,
-            GROUP_CONCAT(DISTINCT u.id SEPARATOR ',') AS partecipanti_ids
-          FROM 
-            fs_leghe l
-          LEFT JOIN 
-            fs_appaia_user_lega a ON l.id = a.id_lega
-          LEFT JOIN 
-            fs_users u ON a.id_user = u.id
-          GROUP BY 
-            l.id";
+                                $query = "
+                SELECT 
+                    l.id AS id_lega,
+                    l.nome_lega,
+                    GROUP_CONCAT(DISTINCT CONCAT(u.nome, ' ', u.cognome) SEPARATOR ', ') AS partecipanti,
+                    GROUP_CONCAT(DISTINCT u.id SEPARATOR ',') AS partecipanti_ids
+                FROM 
+                    fs_leghe l
+                LEFT JOIN 
+                    fs_appaia_user_lega a ON l.id = a.id_lega
+                LEFT JOIN 
+                    fs_users u ON a.id_user = u.id
+                GROUP BY 
+                    l.id
+                ORDER BY 
+                    l.nome_lega ASC"; // Aggiunto l'ordinamento alfabetico per nome_lega
+
                                 $result = mysqli_query($conn, $query);
 
                                 if ($result && mysqli_num_rows($result) > 0) {

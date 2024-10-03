@@ -398,6 +398,127 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                     </div><!-- /.row -->
                     <!-- block content -->
                     <!-- < ?php include '../req/home_fx.php'; ?> -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title">Classifica Giocatori</h3>
+                        </div> <!-- /.card-header -->
+                        <div class="card-body p-0">
+                            <table class="table table-striped">
+                                <thead>
+                                <tr>
+                                    <th style="width: 40px;">#</th>
+                                    <th>Giocatore</th>
+                                    <th>Interlega</th>
+                                    <th style="width: 40px">Punteggio</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <?php
+                                include '../db_connector.php';
+                                $user_id = $_SESSION['id'];
+
+                                // Query per ottenere i giocatori nella stessa interlega dell'utente loggato, ordinati per punteggio
+                                $query = "
+            SELECT u.id, u.nome, u.cognome, 
+                   inter.nome_interlega,
+                   COALESCE(SUM(re.punti), 0) AS punteggio
+            FROM fs_users AS u
+            LEFT JOIN fs_appaia_user_interlega AS ai ON u.id = ai.id_user
+            LEFT JOIN fs_interleghe AS inter ON ai.id_interlega = inter.id
+            LEFT JOIN fs_squadra AS sq ON u.id = sq.id_user
+            LEFT JOIN fs_registra_eventi AS re ON sq.id_educatore = re.id_educatore
+            WHERE ai.id_interlega IN (
+                SELECT ai.id_interlega
+                FROM fs_appaia_user_interlega ai
+                WHERE ai.id_user = ?
+            )
+            GROUP BY u.id, inter.nome_interlega
+            ORDER BY punteggio DESC
+            ";
+
+                                $stmt = $conn->prepare($query);
+                                $stmt->bind_param('i', $user_id); // 'i' indica che l'input è un intero
+                                $stmt->execute();
+                                $result = $stmt->get_result();
+
+                                if ($result && mysqli_num_rows($result) > 0) {
+                                    $position = 1; // Inizializza la posizione
+                                    while ($row = mysqli_fetch_assoc($result)) {
+                                        echo '<tr>';
+                                        echo '<td>' . $position++ . '</td>'; // Posizione
+                                        echo '<td>' . htmlspecialchars($row['nome'] . ' ' . $row['cognome']) . '</td>'; // Nome e cognome del giocatore
+
+                                        // Mostra il nome dell'interlega, o N/A se non presente
+                                        echo '<td>' . ($row['nome_interlega'] ? htmlspecialchars($row['nome_interlega']) : 'N/A') . '</td>';
+
+                                        // Mostra il punteggio
+                                        echo '<td>' . htmlspecialchars($row['punteggio']) . '</td>';
+                                        echo '</tr>';
+                                    }
+                                } else {
+                                    echo '<tr><td colspan="4">Nessun giocatore trovato.</td></tr>';
+                                }
+
+                                // Chiudi lo statement
+                                $stmt->close();
+                                ?>
+                                </tbody>
+                            </table>
+                        </div> <!-- /.card-body -->
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title">Classifica Leghe</h3>
+                        </div> <!-- /.card-header -->
+                        <div class="card-body p-0">
+                            <table class="table table-striped">
+                                <thead>
+                                <tr>
+                                    <th style="width: 40px;">#</th>
+                                    <th>Lega</th>
+                                    <th style="width: 40px">Punteggio</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <?php
+                                include '../db_connector.php';
+
+                                // Query per ottenere la classifica delle leghe, sommando i punteggi dei membri
+                                $query = "
+            SELECT l.id, l.nome_lega, 
+                   COALESCE(SUM(re.punti), 0) AS punteggio
+            FROM fs_leghe AS l
+            LEFT JOIN fs_appaia_user_lega AS al ON l.id = al.id_lega
+            LEFT JOIN fs_squadra AS sq ON al.id_user = sq.id_user
+            LEFT JOIN fs_registra_eventi AS re ON sq.id_educatore = re.id_educatore
+            GROUP BY l.id, l.nome_lega
+            ORDER BY punteggio DESC
+            ";
+
+                                $result = mysqli_query($conn, $query);
+
+                                if ($result && mysqli_num_rows($result) > 0) {
+                                    $position = 1; // Inizializza la posizione
+                                    while ($row = mysqli_fetch_assoc($result)) {
+                                        echo '<tr>';
+                                        echo '<td>' . $position++ . '</td>'; // Posizione
+                                        echo '<td>' . htmlspecialchars($row['nome_lega']) . '</td>'; // Nome della lega
+
+                                        // Mostra il punteggio della lega
+                                        echo '<td>' . htmlspecialchars($row['punteggio']) . '</td>';
+                                        echo '</tr>';
+                                    }
+                                } else {
+                                    echo '<tr><td colspan="3">Nessuna lega trovata.</td></tr>';
+                                }
+                                ?>
+                                </tbody>
+                            </table>
+                        </div> <!-- /.card-body -->
+                    </div>
+
+
 
 
 

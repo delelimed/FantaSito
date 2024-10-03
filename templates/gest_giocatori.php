@@ -426,15 +426,16 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
 
                                 // Query per ottenere tutti i giocatori, il nome dell'interlega e il nome della lega
                                 $query_giocatori = "
-    SELECT u.id, u.nome, u.cognome, u.admin, 
-           GROUP_CONCAT(DISTINCT inter.nome_interlega SEPARATOR ', ') AS nome_interlega,
-           GROUP_CONCAT(DISTINCT leg.nome_lega SEPARATOR ', ') AS nome_lega
-    FROM fs_users AS u
-    LEFT JOIN fs_appaia_user_interlega AS i ON u.id = i.id_user
-    LEFT JOIN fs_interleghe AS inter ON i.id_interlega = inter.id
-    LEFT JOIN fs_appaia_user_lega AS l ON u.id = l.id_user
-    LEFT JOIN fs_leghe AS leg ON l.id_lega = leg.id
-    GROUP BY u.id";
+                SELECT u.id, u.nome, u.cognome, u.admin, 
+                       GROUP_CONCAT(DISTINCT inter.nome_interlega SEPARATOR ', ') AS nome_interlega,
+                       GROUP_CONCAT(DISTINCT leg.nome_lega SEPARATOR ', ') AS nome_lega
+                FROM fs_users AS u
+                LEFT JOIN fs_appaia_user_interlega AS i ON u.id = i.id_user
+                LEFT JOIN fs_interleghe AS inter ON i.id_interlega = inter.id
+                LEFT JOIN fs_appaia_user_lega AS l ON u.id = l.id_user
+                LEFT JOIN fs_leghe AS leg ON l.id_lega = leg.id
+                GROUP BY u.id
+                ORDER BY u.nome ASC, u.cognome ASC"; // Ordinamento per nome e cognome
 
                                 $stmt_giocatori = $conn->prepare($query_giocatori);
                                 $stmt_giocatori->execute();
@@ -443,7 +444,7 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                 // Verifica se ci sono risultati dalla query
                                 if ($result_giocatori->num_rows > 0) {
                                     // Itera su ogni riga della tabella
-                                    while($row = $result_giocatori->fetch_assoc()) {
+                                    while ($row = $result_giocatori->fetch_assoc()) {
                                         echo "<tr class='align-middle'>";
                                         echo "<td>" . htmlspecialchars($row['nome'] . ' ' . $row['cognome']) . "</td>"; // Nome e cognome del giocatore
 
@@ -458,17 +459,17 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
 
                                         // Azioni (pulsanti modifica ed elimina)
                                         echo "<td>
-                <button class='btn btn-primary' data-toggle='modal' data-target='#modificaGiocatoreModal' 
-                    data-id='" . htmlspecialchars($row['id']) . "'
-                    data-nome='" . htmlspecialchars($row['nome']) . "'
-                    data-cognome='" . htmlspecialchars($row['cognome']) . "'
-                    data-interlega='" . htmlspecialchars($row['nome_interlega']) . "'>
-                    Modifica
-                </button>
-                <button class='btn btn-danger btn-elimina' data-id='" . htmlspecialchars($row['id']) . "'>
-                    Elimina
-                </button>
-              </td>";
+                        <button class='btn btn-primary' data-toggle='modal' data-target='#modificaGiocatoreModal' 
+                            data-id='" . htmlspecialchars($row['id']) . "' 
+                            data-nome='" . htmlspecialchars($row['nome']) . "' 
+                            data-cognome='" . htmlspecialchars($row['cognome']) . "' 
+                            data-interlega='" . htmlspecialchars($row['nome_interlega']) . "'>
+                            Modifica
+                        </button>
+                        <button class='btn btn-danger btn-elimina' data-id='" . htmlspecialchars($row['id']) . "'>
+                            Elimina
+                        </button>
+                    </td>";
                                         echo "</tr>";
                                     }
                                 } else {
@@ -478,8 +479,6 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                 // Chiudi lo statement
                                 $stmt_giocatori->close();
                                 ?>
-
-
                                 </tbody>
                             </table>
                         </div> <!-- /.card-body -->

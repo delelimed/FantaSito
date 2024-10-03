@@ -402,20 +402,22 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
 
                     // Query per ottenere i dati dalla tabella fs_bonusmalus con il nome dell'educatore dalla tabella fs_educatori
                     $query_bonusmalus = "
-            SELECT 
-                bm.id_educatore, 
-                bm.nome_bonus, 
-                bm.punti, 
-                e.educatore,
-                COUNT(r.bonusmalus) AS occorrenze
-            FROM 
-                fs_bonusmalus bm
-            JOIN 
-                fs_educatori e ON bm.id_educatore = e.id
-            LEFT JOIN 
-                fs_registra_eventi r ON bm.id = r.bonusmalus
-            GROUP BY 
-                bm.id, e.educatore
+                SELECT 
+                    bm.id_educatore, 
+                    bm.nome_bonus, 
+                    bm.punti, 
+                    e.educatore,
+                    COUNT(r.bonusmalus) AS occorrenze
+                FROM 
+                    fs_bonusmalus bm
+                JOIN 
+                    fs_educatori e ON bm.id_educatore = e.id
+                LEFT JOIN 
+                    fs_registra_eventi r ON bm.id = r.bonusmalus
+                GROUP BY 
+                    bm.id, e.educatore
+                ORDER BY 
+                    e.educatore ASC
             ";
 
                     $result_bonusmalus = $conn->query($query_bonusmalus);

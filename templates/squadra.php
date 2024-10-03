@@ -563,11 +563,11 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
 
                     // Query per ottenere i dati della squadra associata all'utente e i nomi degli educatori
                     $query_squadra = "
-        SELECT fs_squadra.id_educatore, fs_educatori.educatore
-        FROM fs_squadra
-        JOIN fs_educatori ON fs_squadra.id_educatore = fs_educatori.id
-        WHERE fs_squadra.id_user = ?
-    ";
+    SELECT fs_squadra.id_educatore, fs_educatori.educatore
+    FROM fs_squadra
+    JOIN fs_educatori ON fs_squadra.id_educatore = fs_educatori.id
+    WHERE fs_squadra.id_user = ?
+";
                     $stmt_squadra = $conn->prepare($query_squadra);
                     $stmt_squadra->bind_param('i', $user_id);
                     $stmt_squadra->execute();
@@ -591,14 +591,31 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                 // Verifica se ci sono risultati dalla query
                                 if ($result_squadra->num_rows > 0) {
                                     // Itera su ogni riga della tabella
-                                    while($row = $result_squadra->fetch_assoc()) {
+                                    while ($row = $result_squadra->fetch_assoc()) {
+                                        $id_educatore = $row['id_educatore']; // Ottieni l'ID dell'educatore
+
+                                        // Query per calcolare la somma dei punti per l'educatore
+                                        $punti_sql = "
+                            SELECT SUM(punti) AS totale_punti
+                            FROM fs_registra_eventi
+                            WHERE id_educatore = ?
+                        ";
+                                        $stmt_punti = $conn->prepare($punti_sql);
+                                        $stmt_punti->bind_param('i', $id_educatore);
+                                        $stmt_punti->execute();
+                                        $result_punti = $stmt_punti->get_result();
+                                        $punti_row = $result_punti->fetch_assoc();
+                                        $totale_punti = $punti_row['totale_punti'] ?? 0; // Usa 0 se non trovato
+
                                         echo "<tr class='align-middle'>";
                                         echo "<td>" . htmlspecialchars($row['educatore']) . "</td>"; // Nome dell'educatore
-                                        echo "<td> </td>"; // Punti ancora da definire
+                                        echo "<td>" . htmlspecialchars($totale_punti) . "</td>"; // Punti
                                         echo "</tr>";
+
+                                        $stmt_punti->close(); // Chiudi lo statement per i punti
                                     }
                                 } else {
-                                    echo "<tr><td colspan='3'>Nessun dato trovato.</td></tr>";
+                                    echo "<tr><td colspan='2'>Nessun dato trovato.</td></tr>";
                                 }
                                 ?>
                                 </tbody>
@@ -611,6 +628,7 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                     $stmt_squadra->close();
                     $conn->close();
                     ?>
+
 
 
                 </div>

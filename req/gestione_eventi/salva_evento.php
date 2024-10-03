@@ -38,6 +38,16 @@ if (isset($_POST['data']) && isset($_POST['tipo_evento']) && isset($_POST['id_ev
     // Aggiungere i nuovi bonus/malus selezionati
     foreach ($bonusmalus_selezionati as $id_educatore => $bonusmalus_ids) {
         foreach ($bonusmalus_ids as $bonusmalus_id) {
+            // Recupera il punteggio associato al bonus/malus
+            $punti_sql = "SELECT punti FROM fs_bonusmalus WHERE id = ?";
+            $punti_stmt = $conn->prepare($punti_sql);
+            $punti_stmt->bind_param("i", $bonusmalus_id);
+            $punti_stmt->execute();
+            $punti_result = $punti_stmt->get_result();
+            $punti_row = $punti_result->fetch_assoc();
+            $punti = $punti_row['punti'] ?? 0; // Usa 0 se non trovato
+            $punti_stmt->close();
+
             // Controlla se già esiste il record
             $check_sql = "SELECT * FROM fs_registra_eventi WHERE evento = ? AND bonusmalus = ? AND id_educatore = ?";
             $check_stmt = $conn->prepare($check_sql);
@@ -46,10 +56,10 @@ if (isset($_POST['data']) && isset($_POST['tipo_evento']) && isset($_POST['id_ev
             $check_result = $check_stmt->get_result();
 
             if ($check_result->num_rows == 0) {
-                // Se non esiste, inserisci il nuovo record
-                $insert_sql = "INSERT INTO fs_registra_eventi (evento, bonusmalus, id_educatore) VALUES (?, ?, ?)";
+                // Se non esiste, inserisci il nuovo record con il punteggio
+                $insert_sql = "INSERT INTO fs_registra_eventi (evento, bonusmalus, id_educatore, punti) VALUES (?, ?, ?, ?)";
                 $insert_stmt = $conn->prepare($insert_sql);
-                $insert_stmt->bind_param("iii", $id_evento, $bonusmalus_id, $id_educatore);
+                $insert_stmt->bind_param("iiii", $id_evento, $bonusmalus_id, $id_educatore, $punti);
                 $insert_stmt->execute();
                 $insert_stmt->close();
             }

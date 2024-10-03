@@ -426,19 +426,19 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
 
                                 // Query per recuperare i dati da fs_bonusmalus e il nome dell'educatore da fs_educatori
                                 $query_bonusmalus = "
-    SELECT 
-        fs_bonusmalus.id, 
-        fs_bonusmalus.nome_bonus, 
-        fs_bonusmalus.punti, 
-        fs_educatori.id AS id_educatore,  -- Aggiunto per ottenere l'ID dell'educatore
-        fs_educatori.educatore AS nome_educatore 
-    FROM 
-        fs_bonusmalus 
-    JOIN 
-        fs_educatori 
-    ON 
-        fs_bonusmalus.id_educatore = fs_educatori.id";
-
+                SELECT 
+                    fs_bonusmalus.id, 
+                    fs_bonusmalus.nome_bonus, 
+                    fs_bonusmalus.punti, 
+                    fs_educatori.id AS id_educatore,  -- Aggiunto per ottenere l'ID dell'educatore
+                    fs_educatori.educatore AS nome_educatore 
+                FROM 
+                    fs_bonusmalus 
+                JOIN 
+                    fs_educatori 
+                ON 
+                    fs_bonusmalus.id_educatore = fs_educatori.id
+                ORDER BY fs_educatori.educatore ASC"; // Aggiunto l'ordinamento per educatore in ordine alfabetico
 
                                 $stmt = $conn->prepare($query_bonusmalus);
                                 $stmt->execute();
@@ -456,12 +456,9 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                         echo "<td>" . htmlspecialchars($row['punti']) . "</td>";
                                         // Colonna delle azioni con i pulsanti Modifica ed Elimina
                                         echo "<td>
-        <button class='btn btn-warning btn-sm' onclick='modificaBonus(" . $row['id'] . ", \"" . htmlspecialchars($row['nome_bonus']) . "\", " . $row['id_educatore'] . ", " . $row['punti'] . ")'>Modifica</button>
-        <button class='btn btn-danger btn-sm' onclick='eliminaBonus(" . $row['id'] . ")'>Elimina</button>
-      </td>";
-
-
-
+                        <button class='btn btn-warning btn-sm' onclick='modificaBonus(" . $row['id'] . ", \"" . htmlspecialchars($row['nome_bonus']) . "\", " . $row['id_educatore'] . ", " . $row['punti'] . ")'>Modifica</button>
+                        <button class='btn btn-danger btn-sm' onclick='eliminaBonus(" . $row['id'] . ")'>Elimina</button>
+                    </td>";
                                         echo "</tr>";
                                     }
                                 } else {
@@ -471,7 +468,6 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                 $stmt->close();
                                 $conn->close();
                                 ?>
-
                                 </tbody>
                             </table>
                         </div> <!-- /.card-body -->
