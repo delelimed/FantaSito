@@ -15,12 +15,16 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>FantaPG | Dashboard</title>
 
-        <!-- Include Select2 CSS -->
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+        <!-- jQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
         <!-- Include Select2 JS -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 
+
+
+        <!-- Bootstrap 4 CSS -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
         <!-- Google Font: Source Sans Pro -->
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
@@ -29,6 +33,16 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
         <!-- Theme style -->
         <link rel="stylesheet" href="../assets/dist/css/adminlte.min.css">
         <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
+        <style>
+            .select2-container--default .select2-selection--single .select2-selection__rendered {
+                color: black; /* Imposta il colore del testo in nero */
+            }
+
+            .select2-container--default .select2-selection--multiple .select2-selection__choice {
+                color: black; /* Imposta il colore del testo in nero per selezione multipla */
+            }
+        </style>
 
 
     </head>
@@ -403,7 +417,7 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                             <h1 class="m-0">Gestisci Leghe</h1>
                             <button type="button" class="btn btn-info"
                                     data-toggle="modal"
-                                    data-target="#AggiungiLega">
+                                    data-target="#aggiungiLegaModal">
                                 Aggiungi Lega
                             </button>
 
@@ -469,35 +483,89 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                         </div> <!-- /.card-body -->
                     </div>
 
-                    <!-- Finestra modale per la modifica -->
-                    <div class="modal" id="modificaLegaModal" tabindex="-1" role="dialog">
+                    <!-- Modal -->
+                    <div class="modal fade" id="modificaLegaModal" tabindex="-1" role="dialog" aria-labelledby="modificaLegaLabel" aria-hidden="true">
                         <div class="modal-dialog" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title">Modifica Lega</h5>
+                                    <h5 class="modal-title" id="modificaLegaLabel">Modifica Lega</h5>
                                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                         <span aria-hidden="true">&times;</span>
                                     </button>
                                 </div>
                                 <div class="modal-body">
                                     <form id="modificaLegaForm">
-                                        <input type="hidden" id="legaId" name="legaId">
+                                        <input type="hidden" id="idLega" value="">
                                         <div class="form-group">
                                             <label for="nomeLega">Nome Lega</label>
-                                            <input type="text" class="form-control" id="nomeLega" name="nomeLega" required>
+                                            <input type="text" class="form-control" id="nomeLega" name="nome_lega" required>
                                         </div>
                                         <div class="form-group">
-                                            <label for="partecipanti">Partecipanti</label>
-                                            <select multiple="multiple" class="form-control" id="partecipanti" name="partecipanti[]">
-                                                <!-- I partecipanti saranno caricati qui tramite JavaScript -->
+                                            <label for="partecipantiLega">Partecipanti</label>
+                                            <select class="form-control select2" id="partecipantiLega" name="partecipanti[]" multiple="multiple" required>
+                                                <?php
+                                                // Esegui la query per ottenere i partecipanti (utenti)
+                                                $query_partecipanti = "SELECT id, nome, cognome FROM fs_users";
+                                                $result_partecipanti = mysqli_query($conn, $query_partecipanti);
+
+                                                // Aggiungi ogni partecipante come opzione nel selettore
+                                                if ($result_partecipanti && mysqli_num_rows($result_partecipanti) > 0) {
+                                                    while ($utente = mysqli_fetch_assoc($result_partecipanti)) {
+                                                        echo '<option value="' . $utente['id'] . '">' . htmlspecialchars($utente['nome'] . ' ' . $utente['cognome']) . '</option>';
+                                                    }
+                                                } else {
+                                                    echo '<option value="">Nessun partecipante trovato</option>';
+                                                }
+                                                ?>
                                             </select>
                                         </div>
-
                                     </form>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Annulla</button>
-                                    <button type="button" class="btn btn-primary" onclick="salvaModifiche()">Salva modifiche</button>
+                                    <button type="button" class="btn btn-primary" id="salvaModificheLega">Salva Modifiche</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modale Aggiungi Lega -->
+                    <div class="modal fade" id="aggiungiLegaModal" tabindex="-1" aria-labelledby="aggiungiLegaModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="aggiungiLegaModalLabel">Aggiungi Lega</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="formAggiungiLega">
+                                        <div class="form-group">
+                                            <label for="nomeLega">Nome Lega</label>
+                                            <input type="text" class="form-control" id="nomeLegaadd" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="partecipantiLega">Partecipanti</label>
+                                            <select id="partecipantiLegaadd" class="form-control" multiple="multiple" style="width: 100%;" required>
+                                                <?php
+                                                // Query per ottenere i partecipanti dalla tabella fs_users
+                                                $query = "SELECT id, CONCAT(nome, ' ', cognome) AS nome_completo FROM fs_users";
+                                                $result = mysqli_query($conn, $query);
+
+                                                if ($result && mysqli_num_rows($result) > 0) {
+                                                    while ($row = mysqli_fetch_assoc($result)) {
+                                                        echo '<option value="' . $row['id'] . '">' . htmlspecialchars($row['nome_completo']) . '</option>';
+                                                    }
+                                                }
+                                                ?>
+                                            </select>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Annulla</button>
+                                    <button type="button" class="btn btn-primary" id="salvaNuovaLega">Aggiungi Lega</button>
                                 </div>
                             </div>
                         </div>
@@ -537,47 +605,160 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
     <!-- ./wrapper -->
     <!-- REQUIRED SCRIPTS -->
 
-    <!-- jQuery -->
-    <script src="../assets/plugins/jquery/jquery.min.js"></script>
     <!-- Bootstrap 4 -->
     <script src="../assets/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <!-- AdminLTE App -->
     <script src="../assets/dist/js/adminlte.min.js"></script>
 
     <script>
+
         $(document).ready(function() {
-            // Inizializza Select2
-            $('#partecipanti').select2({
-                ajax: {
-                    url: '../req/gestione_leghe/get_utenti.php', // Assicurati che il percorso sia corretto
-                    dataType: 'json',
-                    processResults: function(data) {
-                        return {
-                            results: data.map(function(item) {
-                                return {
-                                    id: item.id,
-                                    text: item.nome + ' ' + item.cognome
-                                };
-                            })
-                        };
+            // Inizializza select2 per il selettore dei partecipanti nella modale
+            $('#partecipantiLegaadd').select2({
+                placeholder: 'Seleziona i partecipanti',
+                width: '100%'
+            });
+
+            // Gestione del salvataggio della nuova lega
+            $('#salvaNuovaLega').on('click', function() {
+                var nomeLega = $('#nomeLegaadd').val().trim(); // Rimuove spazi vuoti
+                var partecipanti = $('#partecipantiLegaadd').val(); // Ottiene l'array di ID selezionati
+
+                // Controlla se il nome della lega è vuoto o se non ci sono partecipanti selezionati
+                if (!nomeLega) {
+                    alert('Inserisci un nome per la lega.');
+                    return; // Ferma l'esecuzione se il campo è vuoto
+                }
+
+                if (!partecipanti || partecipanti.length === 0) {
+                    alert('Seleziona almeno un partecipante.');
+                    return; // Ferma l'esecuzione se non ci sono partecipanti selezionati
+                }
+
+                // Invio dei dati tramite AJAX
+                $.ajax({
+                    url: '../req/gestione_leghe/aggiungi_lega.php', // Il file PHP per aggiungere la lega
+                    method: 'POST',
+                    data: {
+                        nome_lega: nomeLega,
+                        partecipanti: partecipanti // Array di ID dei partecipanti
+                    },
+                    success: function(response) {
+                        var data = JSON.parse(response);
+                        if (data.success) {
+                            // Mostra un messaggio di successo e aggiorna la pagina o la lista delle leghe
+                            alert(data.message);
+                            $('#aggiungiLegaModal').modal('hide');
+                            location.reload(); // Ricarica la pagina per mostrare i cambiamenti
+                        } else {
+                            // Mostra un messaggio di errore
+                            alert(data.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        // Gestione degli errori
+                        console.error(xhr.responseText);
+                        alert('Si è verificato un errore durante il salvataggio della lega.');
                     }
-                },
-                placeholder: 'Seleziona partecipanti',
-                allowClear: true
+                });
             });
         });
 
 
-        function modificaLega(id, nome, partecipanti, partecipantiIds) {
-            document.getElementById('legaId').value = id;
-            document.getElementById('nomeLega').value = nome;
 
-            // Popola il campo Select2 con gli ID dei partecipanti
-            $('#partecipanti').val(partecipantiIds.split(',')).trigger('change');
+    </script>
 
-            // Apri la modale
+    <script>
+
+        $(document).ready(function() {
+            // Inizializza select2 per il selettore dei partecipanti
+            $('#partecipantiLega').select2({
+                placeholder: 'Seleziona i partecipanti',
+                width: '100%'
+            });
+        });
+        $(document).ready(function() {
+            // Inizializza select2 per il selettore dei partecipanti
+            $('#partecipantiLega').select2({
+                placeholder: 'Seleziona i partecipanti',
+                width: '100%'
+            });
+
+            // Controlla se select2 è stato applicato correttamente
+            console.log($.fn.select2 ? "Select2 is loaded" : "Select2 is not loaded");
+            console.log($('#partecipantiLega').length ? "Element exists" : "Element not found");
+        });
+
+
+        function modificaLega(idLega, nomeLega, partecipanti, partecipantiIds) {
+            // Popola i campi della modale con i dati della lega
+            $('#idLega').val(idLega); // Inserisci l'id della lega nel campo nascosto
+            $('#nomeLega').val(nomeLega);
+
+            // Reset della select dei partecipanti
+            $('#partecipantiLega').val(null).trigger('change');
+
+            // Divide i partecipanti e gli ID
+            var partecipantiArray = partecipanti.split(', ');
+            var partecipantiIdsArray = partecipantiIds.split(',');
+
+            // Seleziona i partecipanti già associati alla lega
+            for (var i = 0; i < partecipantiIdsArray.length; i++) {
+                $('#partecipantiLega').val(partecipantiIdsArray).trigger('change');
+            }
+
+            // Mostra la finestra modale
             $('#modificaLegaModal').modal('show');
         }
+
+
+        // Gestione del salvataggio delle modifiche
+        $('#salvaModificheLega').on('click', function() {
+            var nomeLega = $('#nomeLega').val();
+            var partecipanti = $('#partecipantiLega').val();
+
+            console.log("Nome Lega:", nomeLega);
+            console.log("Partecipanti IDs:", partecipanti);
+
+            // Chiudi la finestra modale
+            $('#modificaLegaModal').modal('hide');
+        });
+
+        // Gestione del salvataggio delle modifiche
+        $('#salvaModificheLega').on('click', function() {
+            var idLega = $('#idLega').val(); // ID della lega nascosto nella modale
+            var nomeLega = $('#nomeLega').val();
+            var partecipanti = $('#partecipantiLega').val(); // Ottiene l'array di ID selezionati
+
+            // Invio dei dati tramite AJAX
+            $.ajax({
+                url: '../req/gestione_leghe/salva_lega.php',
+                method: 'POST',
+                data: {
+                    id_lega: idLega,
+                    nome_lega: nomeLega,
+                    partecipanti: partecipanti // Array di ID dei partecipanti
+                },
+                success: function(response) {
+                    var data = JSON.parse(response);
+                    if (data.success) {
+                        // Mostra un messaggio di successo e aggiorna la pagina o la lista delle leghe
+                        alert(data.message);
+                        $('#modificaLegaModal').modal('hide');
+                        location.reload(); // Ricarica la pagina per mostrare i cambiamenti
+                    } else {
+                        // Mostra un messaggio di errore
+                        alert(data.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // Gestione degli errori
+                    console.error(xhr.responseText);
+                }
+            });
+        });
+
+
     </script>
 
     <script>

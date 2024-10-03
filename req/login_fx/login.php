@@ -31,7 +31,7 @@ if (isset($_POST['uname']) && isset($_POST['password'])) {
         exit;
     } else {
         // Controlla il numero di tentativi errati
-        if ($_SESSION['login_attempts'] >= 3) {
+        if ($_SESSION['login_attempts'] >= 50) {
             // Limite di tentativi errati superato, blocca l'accesso
             $em = "Raggiunto limite tentativi. Riprova piu' tardi.";
             header("Location: ../../templates/login.php?error=$em");

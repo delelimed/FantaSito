@@ -392,10 +392,8 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                     <div class="row mb-2">
                         <div class="col-sm-6">
                             <h1 class="m-0">LISTA BONUS/MALUS</h1>
-
                         </div><!-- /.col -->
                         <div class="col-sm-6">
-
                         </div><!-- /.col -->
                     </div><!-- /.row -->
                     <!-- block content -->
@@ -404,10 +402,22 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
 
                     // Query per ottenere i dati dalla tabella fs_bonusmalus con il nome dell'educatore dalla tabella fs_educatori
                     $query_bonusmalus = "
-        SELECT fs_bonusmalus.id_educatore, fs_bonusmalus.nome_bonus, fs_bonusmalus.punti, fs_educatori.educatore 
-        FROM fs_bonusmalus
-        JOIN fs_educatori ON fs_bonusmalus.id_educatore = fs_educatori.id
-    ";
+            SELECT 
+                bm.id_educatore, 
+                bm.nome_bonus, 
+                bm.punti, 
+                e.educatore,
+                COUNT(r.bonusmalus) AS occorrenze
+            FROM 
+                fs_bonusmalus bm
+            JOIN 
+                fs_educatori e ON bm.id_educatore = e.id
+            LEFT JOIN 
+                fs_registra_eventi r ON bm.id = r.bonusmalus
+            GROUP BY 
+                bm.id, e.educatore
+            ";
+
                     $result_bonusmalus = $conn->query($query_bonusmalus);
                     ?>
 
@@ -430,12 +440,12 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                 // Verifica se ci sono risultati dalla query
                                 if ($result_bonusmalus->num_rows > 0) {
                                     // Itera su ogni riga della tabella
-                                    while($row = $result_bonusmalus->fetch_assoc()) {
+                                    while ($row = $result_bonusmalus->fetch_assoc()) {
                                         echo "<tr class='align-middle'>";
                                         echo "<td>" . htmlspecialchars($row['educatore']) . "</td>"; // Nome dell'educatore
                                         echo "<td>" . htmlspecialchars($row['nome_bonus']) . "</td>";
                                         echo "<td>" . htmlspecialchars($row['punti']) . "</td>";
-                                        echo "<td> </td>"; // Occorrenze ancora da definire
+                                        echo "<td>" . htmlspecialchars($row['occorrenze']) . "</td>"; // Mostra il numero di occorrenze
                                         echo "</tr>";
                                     }
                                 } else {
@@ -451,21 +461,16 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                     // Chiudi la connessione al database
                     $conn->close();
                     ?>
+                    <!-- end block content -->
+                </div><!-- /.container-fluid -->
+            </div>
+            <!-- /.content-header -->
 
-
-
-
-                <!-- end block content -->
-
-            </div><!-- /.container-fluid -->
+            <!-- Main content -->
+            <!-- /.content -->
         </div>
-        <!-- /.content-header -->
 
-        <!-- Main content -->
-
-        <!-- /.content -->
-    </div>
-    <!-- /.content-wrapper -->
+        <!-- /.content-wrapper -->
 
     <!-- Control Sidebar -->
 

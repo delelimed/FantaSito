@@ -629,7 +629,7 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                             <label for="admin" class="form-label">Admin?</label>
                                             <input type="checkbox" id="adminadd">
                                         </div>
-                                        <label>N.B.: la password corrisponde allo username.
+                                        <label>N.B.: la password corrisponde a '123'.
                                         Al primo accesso, si raccomanda di IMPORRE un cambio password.</label>
                                         <!-- Puoi aggiungere altri campi qui se necessario -->
                                     </form>
@@ -757,7 +757,6 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                         $('#cognome').val(giocatore.cognome);
                         $('#interlega').val(giocatore.id_interlega); // Cambiato per usare id
                         $('#lega').val(giocatore.id_lega); // Cambiato per usare id
-                        $('#admin').val(giocatore.admin);
 
                         // Mostra la modale
                         $('#modificaGiocatoreModal').modal('show');

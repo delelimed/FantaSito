@@ -10,7 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $uname = isset($_POST['uname']) ? trim($_POST['uname']) : '';
     $interlega = isset($_POST['interlega']) ? intval($_POST['interlega']) : 0;
     $lega = isset($_POST['lega']) ? intval($_POST['lega']) : 0;
-    $admin = isset($_POST['admin']) ? intval($_POST['admin']) : 0;
 
     // Verifica che il giocatoreId non sia vuoto e che i campi necessari siano presenti
     if ($giocatoreId == 0 || empty($nome) || empty($cognome) || empty($uname)) {
@@ -23,9 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     try {
         // 1. Aggiorna i dati del giocatore nella tabella fs_users
-        $query_update_user = "UPDATE fs_users SET nome = ?, cognome = ?, utente = ?, admin = ? WHERE id = ?";
+        $query_update_user = "UPDATE fs_users SET nome = ?, cognome = ?, utente = ? WHERE id = ?";
         $stmt_update_user = $conn->prepare($query_update_user);
-        $stmt_update_user->bind_param("sssii", $nome, $cognome, $uname, $admin, $giocatoreId);
+        $stmt_update_user->bind_param("sssi", $nome, $cognome, $uname, $giocatoreId);
         $stmt_update_user->execute();
 
         // 2. Aggiorna la lega nella tabella fs_appaia_user_lega

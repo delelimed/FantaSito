@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $interlega = isset($_POST['interlega']) ? $_POST['interlega'] : '';
     $lega = isset($_POST['lega']) ? $_POST['lega'] : '';
     $admin = isset($_POST['admin']) ? (int)$_POST['admin'] : 0;
+    $password = '$2y$15$12QUZ2iW4b3VV0790ytn9eH2ciAbOIzL2ZkhCHRFC6EV5yVn7XB82';
 
     // Verifica i valori ricevuti
     echo json_encode([
@@ -27,9 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         try {
             // Inserisci i dati nella tabella fs_users
-            $query_users = "INSERT INTO fs_users (nome, cognome, utente, admin) VALUES (?, ?, ?, ?)";
+            $query_users = "INSERT INTO fs_users (nome, cognome, utente, password, admin) VALUES (?, ?, ?, ?, ?)";
             $stmt_users = $conn->prepare($query_users);
-            $stmt_users->bind_param("sssi", $nome, $cognome, $uname, $admin);
+            $stmt_users->bind_param("ssssi", $nome, $cognome, $uname, $password, $admin);
             $stmt_users->execute();
 
             // Recupera l'ID dell'utente appena inserito

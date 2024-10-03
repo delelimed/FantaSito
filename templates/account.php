@@ -11,7 +11,7 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
     $user_id = $_SESSION['id'];
 
     // Query per ottenere i dati dell'utente (nome, cognome, password)
-    $query_nome_cognome = "SELECT nome, cognome, password, email FROM fs_users WHERE id = ?";
+    $query_nome_cognome = "SELECT nome, cognome, password FROM fs_users WHERE id = ?";
     $stmt_nome_cognome = $conn->prepare($query_nome_cognome);
     $stmt_nome_cognome->bind_param('i', $user_id);
     $stmt_nome_cognome->execute();
