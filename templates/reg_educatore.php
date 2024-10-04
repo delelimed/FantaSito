@@ -2,7 +2,7 @@
 <?php
 session_start();
 include '../db_connector.php';
-if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] == 0 && $_SESSION['admin'] == 1){
+if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] == 0){
 
     ?>
 
@@ -411,15 +411,8 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                 <div class="container-fluid">
                     <div class="row mb-2">
                         <div class="col-sm-6">
-                            <h1 class="m-0">Gestisci Giocatori</h1>
-                            <button type="button" class="btn btn-info"
-                                    data-toggle="modal"
-                                    data-target="#AggiungiGiocatore">
-                                Aggiungi Giocatore
-                            </button>
-                            <a href="su_reset_password.php" class="btn btn-danger">
-                                Reset Password
-                            </a>
+                            <h1 class="m-0">Gestione Educatori</h1>
+                            <button class="btn btn-success" data-toggle="modal" data-target="#aggiungiEducatoreModal">Aggiungi Educatore</button>
 
                         </div><!-- /.col -->
                         <div class="col-sm-6">
@@ -429,271 +422,149 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                     <!-- block content -->
                     <!-- < ?php include '../req/home_fx.php'; ?> -->
 
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h3 class="card-title">Elenco Giocatori</h3>
-                        </div> <!-- /.card-header -->
-                        <div class="card-body p-0">
-                            <table class="table table-striped">
-                                <thead>
-                                <tr>
-                                    <th>Giocatore</th>
-                                    <th>Interlega</th>
-                                    <th>Lega</th>
-                                    <th style="width: 40px">Admin?</th>
-                                    <th>Azioni</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <?php
-                                // Assume che la sessione e la connessione al database ($conn) siano già avviate
-                                $user_id = $_SESSION['id'];
+                    <table class="table table-hover text-nowrap">
+                        <thead>
+                        <tr>
+                            <th>Nome Educatore</th>
+                            <th>Prezzo</th>
+                            <th>Azioni</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php
+                        include '../db_connector.php'; // Assicurati che il percorso sia corretto
 
-                                // Query per ottenere tutti i giocatori, il nome dell'interlega e il nome della lega
-                                $query_giocatori = "
-                SELECT u.id, u.nome, u.cognome, u.admin, 
-                       GROUP_CONCAT(DISTINCT inter.nome_interlega SEPARATOR ', ') AS nome_interlega,
-                       GROUP_CONCAT(DISTINCT leg.nome_lega SEPARATOR ', ') AS nome_lega
-                FROM fs_users AS u
-                LEFT JOIN fs_appaia_user_interlega AS i ON u.id = i.id_user
-                LEFT JOIN fs_interleghe AS inter ON i.id_interlega = inter.id
-                LEFT JOIN fs_appaia_user_lega AS l ON u.id = l.id_user
-                LEFT JOIN fs_leghe AS leg ON l.id_lega = leg.id
-                GROUP BY u.id
-                ORDER BY u.nome ASC, u.cognome ASC"; // Ordinamento per nome e cognome
+                        // Query per ottenere nome educatore e prezzo dalla tabella fs_educatori
+                        $query = "SELECT id, educatore, prezzo FROM fs_educatori";
+                        $result = $conn->query($query);
 
-                                $stmt_giocatori = $conn->prepare($query_giocatori);
-                                $stmt_giocatori->execute();
-                                $result_giocatori = $stmt_giocatori->get_result();
+                        if ($result && mysqli_num_rows($result) > 0) {
+                            while ($row = mysqli_fetch_assoc($result)) {
+                                echo '<tr>';
+                                echo '<td>' . htmlspecialchars($row['educatore']) . '</td>'; // Nome Educatore
+                                echo '<td>' . htmlspecialchars($row['prezzo']) . '</td>'; // Prezzo
+                                echo '<td>';
+                                echo '<button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modificaModal" onclick="apriModificaModal(' . $row['id'] . ')">Modifica</button> ';
+                                echo '<button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#eliminaModal" onclick="apriEliminaModal(' . $row['id'] . ')">Elimina</button>';
+                                echo '</td>';
+                                echo '</tr>';
+                            }
+                        } else {
+                            echo '<tr><td colspan="3">Nessun educatore trovato.</td></tr>';
+                        }
 
-                                // Verifica se ci sono risultati dalla query
-                                if ($result_giocatori->num_rows > 0) {
-                                    // Itera su ogni riga della tabella
-                                    while ($row = $result_giocatori->fetch_assoc()) {
-                                        echo "<tr class='align-middle'>";
-                                        echo "<td>" . htmlspecialchars($row['nome'] . ' ' . $row['cognome']) . "</td>"; // Nome e cognome del giocatore
+                        $conn->close();
+                        ?>
+                        </tbody>
+                    </table>
 
-                                        // Mostra il nome dell'interlega
-                                        echo "<td>" . ($row['nome_interlega'] ? htmlspecialchars($row['nome_interlega']) : 'N/A') . "</td>";
 
-                                        // Mostra il nome della lega
-                                        echo "<td>" . ($row['nome_lega'] ? htmlspecialchars($row['nome_lega']) : 'N/A') . "</td>";
-
-                                        // Admin?
-                                        echo "<td>" . ($row['admin'] ? 'Sì' : 'No') . "</td>"; // 'Sì' se admin è 1, 'No' se 0
-
-                                        // Azioni (pulsanti modifica ed elimina)
-                                        echo "<td>
-                        <button class='btn btn-primary' data-toggle='modal' data-target='#modificaGiocatoreModal' 
-                            data-id='" . htmlspecialchars($row['id']) . "' 
-                            data-nome='" . htmlspecialchars($row['nome']) . "' 
-                            data-cognome='" . htmlspecialchars($row['cognome']) . "' 
-                            data-interlega='" . htmlspecialchars($row['nome_interlega']) . "'>
-                            Modifica
-                        </button>
-                        <button class='btn btn-danger btn-elimina' data-id='" . htmlspecialchars($row['id']) . "'>
-                            Elimina
-                        </button>
-                    </td>";
-                                        echo "</tr>";
-                                    }
-                                } else {
-                                    echo "<tr><td colspan='5'>Nessun giocatore trovato.</td></tr>"; // Aumenta il colspan se aggiungi una colonna
-                                }
-
-                                // Chiudi lo statement
-                                $stmt_giocatori->close();
-                                ?>
-                                </tbody>
-                            </table>
-                        </div> <!-- /.card-body -->
-                    </div>
-
-                    <!-- Modale per Modifica Giocatore -->
-                    <div class="modal fade" id="modificaGiocatoreModal" tabindex="-1" role="dialog" aria-labelledby="modificaGiocatoreModalLabel" aria-hidden="true">
+                    <div class="modal fade" id="modificaModal" tabindex="-1" role="dialog" aria-labelledby="modificaModalLabel" aria-hidden="true">
                         <div class="modal-dialog" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="modificaGiocatoreModalLabel">Modifica Giocatore</h5>
+                                    <h5 class="modal-title" id="modificaModalLabel">Modifica Educatore</h5>
                                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                         <span aria-hidden="true">&times;</span>
                                     </button>
                                 </div>
                                 <div class="modal-body">
-                                    <form id="modificaGiocatoreForm">
-                                        <input type="hidden" id="giocatoreId" name="giocatoreId">
+                                    <form id="modificaForm">
+                                        <input type="hidden" id="modifica_id" name="id">
                                         <div class="form-group">
-                                            <label for="nome">Username</label>
-                                            <input type="text" class="form-control" id="uname" name="uname" required>
+                                            <label for="educatore_nome">Nome Educatore</label>
+                                            <input type="text" class="form-control" id="educatore_nome" name="educatore" required>
                                         </div>
                                         <div class="form-group">
-                                            <label for="nome">Nome</label>
-                                            <input type="text" class="form-control" id="nome" name="nome" required>
+                                            <label for="educatore_prezzo">Prezzo</label>
+                                            <input type="number" class="form-control" id="educatore_prezzo" name="prezzo" required>
                                         </div>
-                                        <div class="form-group">
-                                            <label for="cognome">Cognome</label>
-                                            <input type="text" class="form-control" id="cognome" name="cognome" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="interlega">Interlega</label>
-                                            <select class="form-control" id="interlega" name="interlega" required>
-                                                <option value="">Seleziona Interlega</option>
-                                                <?php
-                                                // Query per recuperare le interleghe
-                                                $query_interleghe = "SELECT id, nome_interlega FROM fs_interleghe";
-                                                $stmt_interleghe = $conn->prepare($query_interleghe);
-                                                $stmt_interleghe->execute();
-                                                $result_interleghe = $stmt_interleghe->get_result();
-
-                                                // Popola il dropdown delle interleghe
-                                                while ($row = $result_interleghe->fetch_assoc()) {
-                                                    echo "<option value='" . htmlspecialchars($row['id']) . "'>" . htmlspecialchars($row['nome_interlega']) . "</option>";
-                                                }
-                                                $stmt_interleghe->close();
-                                                ?>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="lega">Lega</label>
-                                            <select class="form-control" id="lega" name="lega" required>
-                                                <option value="">Seleziona Lega</option>
-                                                <?php
-                                                // Query per recuperare le leghe
-                                                $query_leghe = "SELECT id, nome_lega FROM fs_leghe";
-                                                $stmt_leghe = $conn->prepare($query_leghe);
-                                                $stmt_leghe->execute();
-                                                $result_leghe = $stmt_leghe->get_result();
-
-                                                // Popola il dropdown delle leghe
-                                                while ($row = $result_leghe->fetch_assoc()) {
-                                                    echo "<option value='" . htmlspecialchars($row['id']) . "'>" . htmlspecialchars($row['nome_lega']) . "</option>";
-                                                }
-                                                $stmt_leghe->close();
-                                                ?>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="admin">Admin?</label>
-                                            <select class="form-control" id="admin" name="admin" readonly>
-                                                <option value="0">No</option>
-                                                <option value="1">Sì</option>
-                                            </select>
-                                        </div>
+                                        <button type="submit" class="btn btn-primary">Salva Modifiche</button>
                                     </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Chiudi</button>
-                                    <button type="button" class="btn btn-primary" id="salvaModifiche">Salva Modifiche</button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Modale Aggiungi Giocatore -->
-                    <div class="modal fade" id="AggiungiGiocatore" tabindex="-1" aria-labelledby="AggiungiGiocatoreLabel" aria-hidden="true">
-                        <div class="modal-dialog">
+
+                    <div class="modal fade" id="eliminaModal" tabindex="-1" role="dialog" aria-labelledby="eliminaModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="AggiungiGiocatoreLabel">Aggiungi Giocatore</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    <h5 class="modal-title" id="eliminaModalLabel">Conferma Eliminazione</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
                                 </div>
                                 <div class="modal-body">
-                                    <form id="formAggiungiGiocatore">
-                                        <div class="mb-3">
-                                            <label for="nome" class="form-label">Nome</label>
-                                            <input type="text" class="form-control" id="nomeadd" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="cognome" class="form-label">Cognome</label>
-                                            <input type="text" class="form-control" id="cognomeadd" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="uname" class="form-label">Username</label>
-                                            <input type="text" class="form-control" id="unameadd" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="interlega">Interlega</label>
-                                            <select class="form-control" id="interlegaadd" name="interlegaadd" required>
-                                                <option value="">Seleziona Interlega</option>
-                                                <?php
-                                                // Query per recuperare le interleghe
-                                                $query_interleghe = "SELECT id, nome_interlega FROM fs_interleghe";
-                                                $stmt_interleghe = $conn->prepare($query_interleghe);
-                                                $stmt_interleghe->execute();
-                                                $result_interleghe = $stmt_interleghe->get_result();
-
-                                                // Popola il dropdown delle interleghe
-                                                while ($row = $result_interleghe->fetch_assoc()) {
-                                                    echo "<option value='" . htmlspecialchars($row['id']) . "'>" . htmlspecialchars($row['nome_interlega']) . "</option>";
-                                                }
-                                                $stmt_interleghe->close();
-                                                ?>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="lega">Lega</label>
-                                            <select class="form-control" id="legaadd" name="legaadd" required>
-                                                <option value="">Seleziona Lega</option>
-                                                <?php
-                                                // Query per recuperare le leghe
-                                                $query_leghe = "SELECT id, nome_lega FROM fs_leghe";
-                                                $stmt_leghe = $conn->prepare($query_leghe);
-                                                $stmt_leghe->execute();
-                                                $result_leghe = $stmt_leghe->get_result();
-
-                                                // Popola il dropdown delle leghe
-                                                while ($row = $result_leghe->fetch_assoc()) {
-                                                    echo "<option value='" . htmlspecialchars($row['id']) . "'>" . htmlspecialchars($row['nome_lega']) . "</option>";
-                                                }
-                                                $stmt_leghe->close();
-                                                ?>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="admin" class="form-label">Admin?</label>
-                                            <input type="checkbox" id="adminadd">
-                                        </div>
-                                        <label>N.B.: la password corrisponde a '123'.
-                                        Al primo accesso, si raccomanda di IMPORRE un cambio password.</label>
-                                        <!-- Puoi aggiungere altri campi qui se necessario -->
-                                    </form>
+                                    Sei sicuro di voler eliminare questo educatore?
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Chiudi</button>
-                                    <button type="button" class="btn btn-primary" id="salvaGiocatore">Aggiungi Giocatore</button>
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Annulla</button>
+                                    <button type="button" class="btn btn-danger" id="confermaElimina">Elimina</button>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+
+                    <div class="modal fade" id="aggiungiEducatoreModal" tabindex="-1" role="dialog" aria-labelledby="aggiungiEducatoreModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="aggiungiEducatoreModalLabel">Aggiungi Nuovo Educatore</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="aggiungiEducatoreForm">
+                                        <div class="form-group">
+                                            <label for="educatore_nome">Nome Educatore</label>
+                                            <input type="text" class="form-control" id="educatore_nome" name="educatore" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="educatore_prezzo">Prezzo</label>
+                                            <input type="number" class="form-control" id="educatore_prezzo" name="prezzo" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Aggiungi Educatore</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
 
 
 
 
                     <!-- end block content -->
 
-            </div><!-- /.container-fluid -->
+                </div><!-- /.container-fluid -->
+            </div>
+            <!-- /.content-header -->
+
+            <!-- Main content -->
+
+            <!-- /.content -->
         </div>
-        <!-- /.content-header -->
+        <!-- /.content-wrapper -->
 
-        <!-- Main content -->
 
-        <!-- /.content -->
-    </div>
-    <!-- /.content-wrapper -->
 
-    <!-- Control Sidebar -->
+        <!-- Control Sidebar -->
 
-    <!-- /.control-sidebar -->
+        <!-- /.control-sidebar -->
 
-    <!-- Main Footer -->
-    <footer class="main-footer">
-        <!-- To the right -->
-        <div class="float-right d-none d-sm-inline">
-            Fanta PG &copy;
-        </div>
-        <!-- Default to the left -->
-        <strong>Copyright &copy; 2024 <a href="https://delelimed.github.io/" target="_blank" rel="noopener noreferrer">DELELIMED</a>.</strong> All rights reserved.
-    </footer>
+        <!-- Main Footer -->
+        <footer class="main-footer">
+            <!-- To the right -->
+            <div class="float-right d-none d-sm-inline">
+                Fanta PG &copy;
+            </div>
+            <!-- Default to the left -->
+            <strong>Copyright &copy; 2024 <a href="https://delelimed.github.io/" target="_blank" rel="noopener noreferrer">DELELIMED</a>.</strong> All rights reserved.
+        </footer>
     </div>
 
 
@@ -712,153 +583,69 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
-        $(document).ready(function() {
-            $("#salvaGiocatore").click(function(event) {
-                event.preventDefault(); // Previeni il comportamento di default
 
-                var nome = $("#nomeadd").val();
-                var cognome = $("#cognomeadd").val();
-                var uname = $("#unameadd").val();
-                var interlega = $("#interlegaadd").val();
-                var lega = $("#legaadd").val();
-                var admin = $("#adminadd").is(':checked') ? 1 : 0;
-
-                // Controlla se i valori sono correttamente popolati nella console
-                console.log({
-                    nome: nome,
-                    cognome: cognome,
-                    uname: uname,
-                    interlega: interlega,
-                    lega: lega,
-                    admin: admin
-                });
-
-                // Effettua la richiesta AJAX
-                $.ajax({
-                    url: "../req/gestione_giocatori/addGiocatore.php",
-                    type: "POST",
-                    data: {
-                        nome: nome,
-                        cognome: cognome,
-                        uname: uname,
-                        interlega: interlega,
-                        lega: lega,
-                        admin: admin
-                    },
-                    success: function(response) {
-                        alert(response); // Mostra la risposta dal PHP
-                        $("#AggiungiGiocatore").modal('hide'); // Chiudi il modal dopo il successo
-
-                    },
-                    error: function(xhr, status, error) {
-                        alert("Errore durante l'aggiunta del giocatore.");
-                        console.log(error);
-                    }
-                });
-            });
-        });
-
-    </script>
-
-
-    <script>
-        $(document).ready(function() {
-            // Evento per il pulsante di modifica
-            $('.btn-primary[data-toggle="modal"]').on('click', function() {
-                var id = $(this).data('id');
-
-                // Esegui una chiamata AJAX per recuperare i dati del giocatore
-                $.ajax({
-                    url: '../req/gestione_giocatori/getGiocatoreDetails.php',
-                    method: 'POST',
-                    data: { id: id },
-                    dataType: 'json',
-                    success: function(giocatore) {
-                        // Popola i campi della modale con i dati ricevuti
-                        $('#giocatoreId').val(giocatore.id);
-                        $('#nome').val(giocatore.nome);
-                        $('#uname').val(giocatore.utente);
-                        $('#cognome').val(giocatore.cognome);
-                        $('#interlega').val(giocatore.id_interlega); // Cambiato per usare id
-                        $('#lega').val(giocatore.id_lega); // Cambiato per usare id
-
-                        // Mostra la modale
-                        $('#modificaGiocatoreModal').modal('show');
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("Errore nel recupero dei dati:", error);
-                        alert("Si è verificato un errore durante il recupero dei dati. Riprova.");
-                    }
-                });
-            });
-
-
-        });
-
-    </script>
-
-    <script>
-        $('#salvaModifiche').click(function () {
-            // Prepara i dati dal form
-            var data = {
-                giocatoreId: $('#giocatoreId').val(),
-                nome: $('#nome').val(),
-                cognome: $('#cognome').val(),
-                uname: $('#uname').val(),
-                interlega: $('#interlega').val(),
-                lega: $('#lega').val(),
-            };
-
-            // Invio AJAX
+        // Funzione per aprire la modale di modifica con i dati dell'educatore
+        function apriModificaModal(id) {
             $.ajax({
-                url: '../req/gestione_giocatori/updateGiocatore.php', // Il percorso al file PHP
+                url: '../req/gestione_educatori/get_educatore.php', // PHP che restituisce i dati dell'educatore in base all'id
+                type: 'GET',
+                data: { id: id },
+                success: function(response) {
+                    const educatore = JSON.parse(response);
+                    $('#modifica_id').val(educatore.id);
+                    $('#educatore_nome').val(educatore.educatore);
+                    $('#educatore_prezzo').val(educatore.prezzo);
+                }
+            });
+        }
+
+        // Funzione per aprire la modale di eliminazione con l'id dell'educatore
+        function apriEliminaModal(id) {
+            $('#confermaElimina').off('click').on('click', function() {
+                eliminaEducatore(id);
+            });
+        }
+
+        // Funzione per gestire l'eliminazione tramite AJAX
+        function eliminaEducatore(id) {
+            $.ajax({
+                url: '../req/gestione_educatori/elimina_educatore.php',
                 type: 'POST',
-                data: data,
-                success: function (response) {
-                    var res = JSON.parse(response);
-                    if (res.status == 'success') {
-                        alert(res.message);
-                        // Aggiorna la vista o chiudi il modal
-                        $('#modificaGiocatoreModal').modal('hide');
-                    } else {
-                        location.reload(); // Ricarica la pagina
-                        alert(res.message);
-                    }
-                },
-                error: function () {
-                    alert('Errore nella richiesta.');
+                data: { id: id },
+                success: function(response) {
+                    location.reload(); // Ricarica la pagina dopo l'eliminazione
+                }
+            });
+        }
+
+        // Gestione del form di modifica educatore
+        $('#modificaForm').on('submit', function(event) {
+            event.preventDefault();
+            $.ajax({
+                url: '../req/gestione_educatori/modifica_educatore.php',
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    location.reload(); // Ricarica la pagina dopo la modifica
                 }
             });
         });
-    </script>
 
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('.btn-elimina').on('click', function() {
-                var userId = $(this).data('id');
-                if (confirm('Sei sicuro di voler eliminare questo giocatore?')) {
-                    $.ajax({
-                        url: '../req/gestione_giocatori/elimina_giocatore.php',
-                        type: 'POST',
-                        data: { id: userId },
-                        success: function(response) {
-                            // Aggiorna la tabella o ricarica la pagina
-                            if (response.success) {
-                                location.reload(); // Ricarica la pagina
-                            } else {
-                            }
-                        },
-                        error: function() {
-                            alert('Si è verificato un errore nel server.');
-                        }
-                    });
+        // Gestione del form di aggiunta educatore
+        $('#aggiungiEducatoreForm').on('submit', function(event) {
+            event.preventDefault();
+            $.ajax({
+                url: '../req/gestione_educatori/aggiungi_educatore.php', // PHP per inserire un nuovo educatore
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    location.reload(); // Ricarica la pagina dopo l'inserimento
                 }
             });
         });
-    </script>
 
+
+    </script>
 
 
     <script>

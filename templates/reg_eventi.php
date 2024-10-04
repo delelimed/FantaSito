@@ -125,13 +125,13 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                         <li class="nav-item">
                             <a href="../templates/squadra.php" class="nav-link">
                                 <?php if ($_SERVER['REQUEST_URI'] == $page_name && $active_menu == 'La Mia Squadra') : ?>
-                                    <i class="nav-icon fa fa-upload" aria-hidden="true"></i>
+                                    <i class="nav-icon fa fa-users" aria-hidden="true"></i>
                                     <p>
                                         La Mia Squadra
                                     </p>
                                     <span class="badge bg-success">Active</span>
                                 <?php else : ?>
-                                    <i class="nav-icon fa fa-upload" aria-hidden="true"></i>
+                                    <i class="nav-icon fa fa-users" aria-hidden="true"></i>
                                     <p>
                                         La Mia Squadra
                                     </p>
@@ -169,13 +169,13 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                         <li class="nav-item">
                             <a href="../templates/vedi_interlega.php" class="nav-link">
                                 <?php if ($_SERVER['REQUEST_URI'] == $page_name && $active_menu == 'vedi_interlega') : ?>
-                                    <i class="fa fa-folder-open nav-icon" aria-hidden="true"></i>
+                                    <i class="nav-icon fa fa fa-eye" aria-hidden="true"></i>
                                     <p>
                                         La Mia Interlega
                                     </p>
                                     <span class="badge bg-success">Active</span>
                                 <?php else : ?>
-                                    <i class="fa fa-folder-open nav-icon" aria-hidden="true"></i>
+                                    <i class="nav-icon fa fa fa-eye" aria-hidden="true"></i>
                                     <p>
                                         La Mia Interlega
                                     </p>
@@ -191,13 +191,13 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                         <li class="nav-item">
                             <a href="../templates/classifica.php" class="nav-link">
                                 <?php if ($_SERVER['REQUEST_URI'] == $page_name && $active_menu == 'classifica') : ?>
-                                    <i class="fa fa-folder-open nav-icon" aria-hidden="true"></i>
+                                    <i class="fa fa-trophy nav-icon" aria-hidden="true"></i>
                                     <p>
                                         Classifica
                                     </p>
                                     <span class="badge bg-success">Active</span>
                                 <?php else : ?>
-                                    <i class="fa fa-folder-open nav-icon" aria-hidden="true"></i>
+                                    <i class="fa fa-trophy nav-icon" aria-hidden="true"></i>
                                     <p>
                                         Classifica
                                     </p>
@@ -275,6 +275,27 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                             <i class="far fa-circle nav-icon" aria-hidden="true"></i>
                                             <p>
                                                 Gestisci Giocatori
+                                            </p>
+                                        <?php endif; ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <?php
+                                    $active_menu = 'gest_educatori';
+                                    $page_name = 'reg_educatore.php';
+                                    ?>
+                                <li class="nav-item">
+                                    <a href="../templates/reg_educatore.php" class="nav-link">
+                                        <?php if ($_SERVER['REQUEST_URI'] == $page_name && $active_menu == 'gest_educatori') : ?>
+                                            <i class="far fa-circle nav-icon" aria-hidden="true"></i>
+                                            <p>
+                                                Gestisci Educatori
+                                            </p>
+                                            <span class="badge bg-success">Active</span>
+                                        <?php else : ?>
+                                            <i class="far fa-circle nav-icon" aria-hidden="true"></i>
+                                            <p>
+                                                Gestisci Educatori
                                             </p>
                                         <?php endif; ?>
                                     </a>
@@ -419,6 +440,10 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                     data-toggle="modal"
                                     data-target="#aggiungiinterLegaModal">
                                 Registra un nuovo evento
+                            </button>
+
+                            <button type="button" class="btn btn-info" data-toggle="modal" data-target="#impostazioniModal">
+                                Impostazioni
                             </button>
 
 
@@ -584,6 +609,101 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
 
 
 
+
+
+                    <!-- Modale Impostazioni -->
+                    <div class="modal fade" id="impostazioniModal" tabindex="-1" role="dialog" aria-labelledby="impostazioniModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="impostazioniModalLabel">Impostazioni</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="impostazioniForm">
+                                        <div class="mb-3">
+                                            <label for="numero1" class="form-label">Prezzo Massimo</label>
+                                            <input type="number" class="form-control" id="numero1" name="numero1" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="numero2" class="form-label">Numero Educatori (0 - no limit)</label>
+                                            <input type="number" class="form-control" id="numero2" name="numero2" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Consenti Modifica Squadra</label>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="switchImpostazioni">
+                                                <label class="form-check-label" for="switchImpostazioni">Modifiche Attive</label>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Chiudi</button>
+                                    <button type="button" class="btn btn-primary" id="salvaImpostazioni">Salva</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        // Carica le impostazioni esistenti quando la modale viene aperta
+                        $('#impostazioniModal').on('show.bs.modal', function () {
+                            fetch('../req/carica_impostazioni.php')
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        document.getElementById('numero1').value = data.prezzo_massimo || ''; // Prezzo massimo
+                                        document.getElementById('numero2').value = data.numero_educatori || ''; // Numero educatori
+                                        document.getElementById('switchImpostazioni').checked = data.consenti_cambio == 1; // Consenti cambio
+                                    } else {
+                                        alert('Errore nel caricamento delle impostazioni: ' + data.message);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Errore:', error);
+                                    alert('Si è verificato un errore durante il caricamento delle impostazioni.');
+                                });
+                        });
+
+                        document.getElementById('salvaImpostazioni').addEventListener('click', function() {
+                            const prezzoMassimo = document.getElementById('numero1').value;
+                            const numeroEducatori = document.getElementById('numero2').value;
+                            const consentiCambio = document.getElementById('switchImpostazioni').checked ? 1 : 0;
+
+                            // Prepara i dati da inviare
+                            const data = {
+                                prezzo_massimo: prezzoMassimo,
+                                numero_educatori: numeroEducatori,
+                                consenti_cambio: consentiCambio
+                            };
+
+                            // Effettua una richiesta AJAX per salvare le impostazioni
+                            fetch('../req/salva_impostazioni.php', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(data)
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        alert('Impostazioni salvate con successo!');
+                                        // Chiudi la modale
+                                        $('#impostazioniModal').modal('hide');
+                                    } else {
+                                        alert('Errore nel salvataggio delle impostazioni: ' + data.message);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Errore:', error);
+                                    alert('Si è verificato un errore durante il salvataggio delle impostazioni.');
+                                });
+                        });
+                    </script>
 
 
                     <!-- end block content -->

@@ -254,6 +254,27 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                         <?php endif; ?>
                                     </a>
                                 </li>
+                                <li class="nav-item">
+                                    <?php
+                                    $active_menu = 'gest_educatori';
+                                    $page_name = 'reg_educatore.php';
+                                    ?>
+                                <li class="nav-item">
+                                    <a href="../templates/reg_educatore.php" class="nav-link">
+                                        <?php if ($_SERVER['REQUEST_URI'] == $page_name && $active_menu == 'gest_educatori') : ?>
+                                            <i class="far fa-circle nav-icon" aria-hidden="true"></i>
+                                            <p>
+                                                Gestisci Educatori
+                                            </p>
+                                            <span class="badge bg-success">Active</span>
+                                        <?php else : ?>
+                                            <i class="far fa-circle nav-icon" aria-hidden="true"></i>
+                                            <p>
+                                                Gestisci Educatori
+                                            </p>
+                                        <?php endif; ?>
+                                    </a>
+                                </li>
                         </li>
                         <li class="nav-item">
                             <?php

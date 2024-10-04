@@ -101,13 +101,13 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                         <li class="nav-item">
                             <a href="../templates/squadra.php" class="nav-link">
                                 <?php if ($_SERVER['REQUEST_URI'] == $page_name && $active_menu == 'La Mia Squadra') : ?>
-                                    <i class="nav-icon fa fa-upload" aria-hidden="true"></i>
+                                    <i class="nav-icon fa fa-users" aria-hidden="true"></i>
                                     <p>
                                         La Mia Squadra
                                     </p>
                                     <span class="badge bg-success">Active</span>
                                 <?php else : ?>
-                                    <i class="nav-icon fa fa-upload" aria-hidden="true"></i>
+                                    <i class="nav-icon fa fa-users" aria-hidden="true"></i>
                                     <p>
                                         La Mia Squadra
                                     </p>
@@ -145,13 +145,13 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                         <li class="nav-item">
                             <a href="../templates/vedi_interlega.php" class="nav-link">
                                 <?php if ($_SERVER['REQUEST_URI'] == $page_name && $active_menu == 'vedi_interlega') : ?>
-                                    <i class="fa fa-folder-open nav-icon" aria-hidden="true"></i>
+                                    <i class="nav-icon fa fa fa-eye" aria-hidden="true"></i>
                                     <p>
                                         La Mia Interlega
                                     </p>
                                     <span class="badge bg-success">Active</span>
                                 <?php else : ?>
-                                    <i class="fa fa-folder-open nav-icon" aria-hidden="true"></i>
+                                    <i class="nav-icon fa fa fa-eye" aria-hidden="true"></i>
                                     <p>
                                         La Mia Interlega
                                     </p>
@@ -167,13 +167,13 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                         <li class="nav-item">
                             <a href="../templates/classifica.php" class="nav-link">
                                 <?php if ($_SERVER['REQUEST_URI'] == $page_name && $active_menu == 'classifica') : ?>
-                                    <i class="fa fa-folder-open nav-icon" aria-hidden="true"></i>
+                                    <i class="fa fa-trophy nav-icon" aria-hidden="true"></i>
                                     <p>
                                         Classifica
                                     </p>
                                     <span class="badge bg-success">Active</span>
                                 <?php else : ?>
-                                    <i class="fa fa-folder-open nav-icon" aria-hidden="true"></i>
+                                    <i class="fa fa-trophy nav-icon" aria-hidden="true"></i>
                                     <p>
                                         Classifica
                                     </p>
@@ -251,6 +251,27 @@ if (isset($_SESSION['id']) && isset($_SESSION['nome']) && $_SESSION['locked'] ==
                                             <i class="far fa-circle nav-icon" aria-hidden="true"></i>
                                             <p>
                                                 Gestisci Giocatori
+                                            </p>
+                                        <?php endif; ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <?php
+                                    $active_menu = 'gest_educatori';
+                                    $page_name = 'reg_educatore.php';
+                                    ?>
+                                <li class="nav-item">
+                                    <a href="../templates/reg_educatore.php" class="nav-link">
+                                        <?php if ($_SERVER['REQUEST_URI'] == $page_name && $active_menu == 'gest_educatori') : ?>
+                                            <i class="far fa-circle nav-icon" aria-hidden="true"></i>
+                                            <p>
+                                                Gestisci Educatori
+                                            </p>
+                                            <span class="badge bg-success">Active</span>
+                                        <?php else : ?>
+                                            <i class="far fa-circle nav-icon" aria-hidden="true"></i>
+                                            <p>
+                                                Gestisci Educatori
                                             </p>
                                         <?php endif; ?>
                                     </a>
